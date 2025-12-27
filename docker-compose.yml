@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  workspace:
+    build: .
+    container_name: antigravity_workspace
+    ports:
+      - "8888:8888"
+    volumes:
+      - .:/app
+      - c:/Users/Mwitw/safe_data:/data
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=password
+      - DB_NAME=luse_quant
+    depends_on:
+      - db
+
+  backend:
+    build: ./backend
+    container_name: luse_backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@db:5432/luse_quant
+    depends_on:
+      - db
+      - redis
+
+  frontend:
+    build: ./frontend
+    container_name: luse_frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - VITE_API_URL=http://localhost:8000
+
+  db:
+    image: timescale/timescaledb:latest-pg14
+    container_name: luse_db
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=luse_quant
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:alpine
+    container_name: luse_redis
+    ports:
+      - "6379:6379"
+
+  adminer:
+    image: adminer
+    container_name: luse_adminer
+    restart: always
+    ports:
+      - "8080:8080"
+
+volumes:
+  postgres_data:
+  workspace_data:

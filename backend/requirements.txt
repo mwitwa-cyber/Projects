@@ -1,0 +1,20 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+psycopg2-binary
+pandas
+numpy
+scipy
+# QuantLib
+# PyPortfolioOpt
+# celery
+redis
+python-dotenv
+alembic
+asyncpg
+greenlet
+# C++ Build dependencies issue on Windows + Python 3.14
+# cvxpy
+# ecos
+# osqp
+# scs

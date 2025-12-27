@@ -1,0 +1,26 @@
+{
+    "mcpServers": {
+        "docker-desktop": {
+            "command": "docker",
+            "args": [
+                "mcp",
+                "gateway",
+                "run"
+            ]
+        },
+        "financial-analyst": {
+            "command": "docker",
+            "args": [
+                "run",
+                "-i",
+                "--rm",
+                "-v",
+                "c:\\Users\\Mwitw\\safe_data:/data",
+                "--entrypoint",
+                "python",
+                "financial-analyst-image",
+                "/app/server.py"
+            ]
+        }
+    }
+}
