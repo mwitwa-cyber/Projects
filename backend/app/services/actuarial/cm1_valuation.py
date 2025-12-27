@@ -2,8 +2,9 @@
 """
 CM1 Module: Deterministic Valuation
 
-Implements time value of money, bond pricing, DCF, and annuity calculations
-as per IFoA CM1 curriculum adapted for Zambian market.
+Robust implementation of time value of money, bond pricing, DCF, and annuity calculations
+as per IFoA CM1 curriculum, adapted for Zambian market. Includes type hints, docstrings,
+and error handling for production use.
 """
 
 import numpy as np
@@ -14,48 +15,82 @@ from scipy.optimize import newton
 
 @dataclass
 class CashFlow:
-    """Represents a single cash flow."""
-    time: float  # Time in years
-    amount: float  # Cash flow amount
+    """
+    Represents a single cash flow.
+    Attributes:
+        time (float): Time in years
+        amount (float): Cash flow amount
+    """
+    time: float
+    amount: float
 
 
 class TimeValueOfMoney:
-    """Core TVM engine with actuarial notation."""
-    
+    """
+    Core TVM engine with actuarial notation and robust error handling.
+    """
     @staticmethod
     def discount_factor(i: float, n: float) -> float:
-        """Calculate discount factor v^n = (1+i)^(-n)"""
+        """
+        Calculate discount factor v^n = (1+i)^(-n)
+        Args:
+            i (float): Interest rate
+            n (float): Number of periods
+        Returns:
+            float: Discount factor
+        """
+        if i < -1:
+            raise ValueError("Interest rate must be greater than -100%.")
         return (1 + i) ** (-n)
-    
+
     @staticmethod
     def accumulation_factor(i: float, n: float) -> float:
-        """Calculate accumulation factor (1+i)^n"""
+        """
+        Calculate accumulation factor (1+i)^n
+        """
+        if i < -1:
+            raise ValueError("Interest rate must be greater than -100%.")
         return (1 + i) ** n
-    
+
     @staticmethod
     def force_of_interest(i: float) -> float:
-        """Calculate force of interest δ = ln(1+i)"""
+        """
+        Calculate force of interest δ = ln(1+i)
+        """
+        if i <= -1:
+            raise ValueError("Interest rate must be greater than -100%.")
         return np.log(1 + i)
-    
+
     @staticmethod
     def discount_rate(i: float) -> float:
-        """Calculate discount rate d = i/(1+i)"""
+        """
+        Calculate discount rate d = i/(1+i)
+        """
+        if i <= -1:
+            raise ValueError("Interest rate must be greater than -100%.")
         return i / (1 + i)
-    
+
     @staticmethod
     def present_value(cash_flows: List[CashFlow], i: float) -> float:
-        """Calculate present value of a series of cash flows"""
-        pv = sum(cf.amount * TimeValueOfMoney.discount_factor(i, cf.time) 
-                for cf in cash_flows)
-        return pv
+        """
+        Calculate present value of a series of cash flows
+        """
+        if not cash_flows:
+            return 0.0
+        return sum(cf.amount * TimeValueOfMoney.discount_factor(i, cf.time) for cf in cash_flows)
 
 
 class AnnuityCalculator:
-    """Annuity valuation formulas."""
-    
+    """
+    Annuity valuation formulas with error handling.
+    """
     @staticmethod
     def annuity_immediate(i: float, n: int) -> float:
-        """Calculate PV of annuity in arrears: a_n| = (1 - v^n) / i"""
+        """
+        Calculate PV of annuity in arrears: a_n| = (1 - v^n) / i
+        """
+        if i == 0:
+            return float(n)
         v = TimeValueOfMoney.discount_factor(i, n)
         return (1 - v) / i
     

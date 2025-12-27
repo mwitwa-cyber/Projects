@@ -22,8 +22,22 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+<<<<<<< Updated upstream
 # Include API router
 app.include_router(api_router, prefix=settings.API_V1_PREFIX)
+=======
+from app.api import market_data, valuation
+from app.core import models
+from app.core.db import engine
+import os
+import asyncio
+
+# Optional: start background market-data scraper
+try:
+    from app.services.scraper import run_background_scraper
+except Exception:
+    run_background_scraper = None
+>>>>>>> Stashed changes
 
 
 @app.get("/")
@@ -39,9 +53,23 @@ async def root():
 
 @app.get("/health")
 async def health_check():
+<<<<<<< Updated upstream
     """Detailed health check."""
     return {
         "status": "healthy",
         "database": "connected",
         "api_version": "v1"
     }
+=======
+    return {"status": "healthy"}
+
+
+@app.on_event("startup")
+async def startup_tasks():
+    # If ENABLE_SCRAPER is set (True/1/yes), start background scraper
+    if os.getenv("ENABLE_SCRAPER", "false").lower() in ("1", "true", "yes") and run_background_scraper:
+        provider = os.getenv("SCRAPER_PROVIDER")
+        interval = os.getenv("SCRAPER_INTERVAL")
+        # schedule background scraper but don't await it
+        asyncio.create_task(run_background_scraper(provider, interval))
+>>>>>>> Stashed changes

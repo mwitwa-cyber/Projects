@@ -1,58 +1,81 @@
 import numpy as np
 from scipy.optimize import newton
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Optional
 from datetime import date, timedelta
 
 class ValuationService:
     """
     Implements Actuarial Module 1 (CM1): Deterministic Valuation.
     Uses pure Python/NumPy/SciPy as a robust fallback for QuantLib on Windows.
+    Provides robust error handling and type hints.
     """
-    
+
     @staticmethod
     def calculate_discount_factor(rate: float, t: float, compounding: str = "discrete") -> float:
         """
-        v^t = (1+i)^-t
+        Calculate discount factor v^t = (1+i)^-t or exp(-rt) for continuous compounding.
+        Args:
+            rate (float): Interest rate
+            t (float): Time in years
+            compounding (str): 'discrete' or 'continuous'
+        Returns:
+            float: Discount factor
         """
         if compounding == "continuous":
             return np.exp(-rate * t)
+        if rate < -1:
+            raise ValueError("Interest rate must be greater than -100%.")
         return (1 + rate) ** -t
 
     @staticmethod
     def present_value_annuity(rate: float, n: int, payment: float = 1.0, type: str = "arrears") -> float:
         """
-        Calculates a_n during (Arrears) or a_doubledot_n (Due).
+        Calculates a_n (arrears) or a_doubledot_n (due).
+        Args:
+            rate (float): Interest rate
+            n (int): Number of periods
+            payment (float): Payment per period
+            type (str): 'arrears' or 'due'
+        Returns:
+            float: Present value of annuity
         """
         if rate == 0:
             return n * payment
-            
         v = 1 / (1 + rate)
         an = (1 - v**n) / rate
-        
         if type == "due":
             an *= (1 + rate)
-            
         return an * payment
 
     @staticmethod
-    def bond_pricing(face_value: float, coupon_rate: float, market_yield: float, years_to_maturity: float, frequency: int = 2) -> Dict:
+    def bond_pricing(
+        face_value: float,
+        coupon_rate: float,
+        market_yield: float,
+        years_to_maturity: float,
+        frequency: int = 2
+    ) -> Dict[str, float]:
         """
         Prices a standard fixed-coupon bond.
+        Args:
+            face_value (float): Face value of bond
+            coupon_rate (float): Annual coupon rate
+            market_yield (float): Market yield
+            years_to_maturity (float): Years to maturity
+            frequency (int): Coupon payments per year
+        Returns:
+            Dict[str, float]: Price, durations, convexity
         """
-        n_periods = years_to_maturity * frequency
+        n_periods = int(years_to_maturity * frequency)
         periodic_coupon = (coupon_rate * face_value) / frequency
         periodic_yield = market_yield / frequency
-        
         # PV of Coupons (Annuity)
         pv_coupons = ValuationService.present_value_annuity(periodic_yield, n_periods, periodic_coupon)
-        
         # PV of Redemption (Capital)
         pv_redemption = face_value * ((1 + periodic_yield) ** -n_periods)
-        
         price = pv_coupons + pv_redemption
         duration_mac = ValuationService.calculate_duration(face_value, coupon_rate, market_yield, years_to_maturity, frequency)
         convexity = ValuationService.calculate_convexity(face_value, coupon_rate, market_yield, years_to_maturity, frequency)
-        
         return {
             "price": round(price, 4),
             "macaulay_duration": round(duration_mac, 4),

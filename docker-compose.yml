@@ -1,3 +1,6 @@
+version: '3.8'
+
+services:
   celery:
     build: ./backend
     container_name: luse_celery
@@ -11,9 +14,6 @@
     depends_on:
       - db
       - redis
-version: '3.8'
-
-services:
   workspace:
     build: .
     container_name: antigravity_workspace
@@ -39,7 +39,23 @@ services:
     volumes:
       - ./backend:/app
     environment:
+      # Database
       - DATABASE_URL=postgresql://postgres:password@db:5432/luse_quant
+      
+      # Scraper Configuration
+      - ENABLE_SCRAPER=false
+      - SCRAPER_PROVIDER=simulator          # Options: simulator, yfinance, alphavantage, finnhub, iexcloud
+      - SCRAPER_INTERVAL=60                 # Seconds between scraper runs
+      
+      # Provider API Keys (set in .env file or export)
+      # - ALPHAVANTAGE_API_KEY=${ALPHAVANTAGE_API_KEY}
+      # - FINNHUB_API_KEY=${FINNHUB_API_KEY}
+      # - IEXCLOUD_API_KEY=${IEXCLOUD_API_KEY}
+      
+      # Optional: Symbol mapping for provider format
+      # - SYMBOL_MAP_CECZ=CECZ.ZA
+      # - SYMBOL_MAP_ZANACO=ZANACO.ZA
+      
     depends_on:
       - db
       - redis

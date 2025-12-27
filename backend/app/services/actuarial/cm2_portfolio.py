@@ -2,8 +2,8 @@
 """
 CM2 Module: Investment Performance & Risk
 
-Implements Modern Portfolio Theory with adjustments for frontier markets,
-including Scholes-Williams Beta and covariance matrix repair.
+Robust implementation of Modern Portfolio Theory, risk metrics, and optimizer
+with adjustments for frontier markets. Includes type hints, docstrings, and error handling.
 """
 
 import numpy as np
@@ -16,7 +16,14 @@ from scipy.stats import norm
 
 @dataclass
 class PortfolioMetrics:
-    """Container for portfolio performance metrics."""
+    """
+    Container for portfolio performance metrics.
+    Attributes:
+        expected_return (float): Portfolio expected return
+        volatility (float): Portfolio volatility
+        sharpe_ratio (float): Sharpe ratio
+        weights (Dict[str, float]): Asset weights
+    """
     expected_return: float
     volatility: float
     sharpe_ratio: float
@@ -24,39 +31,45 @@ class PortfolioMetrics:
 
 
 class CovarianceEstimator:
-    """Covariance matrix estimation with frontier market adjustments."""
-    
+    """
+    Covariance matrix estimation with frontier market adjustments.
+    """
     @staticmethod
     def ledoit_wolf_shrinkage(returns: pd.DataFrame) -> np.ndarray:
-        """Ledoit-Wolf shrinkage estimator: Σ_shrunk = δF + (1-δ)S"""
+        """
+        Ledoit-Wolf shrinkage estimator: Σ_shrunk = δF + (1-δ)S
+        Args:
+            returns (pd.DataFrame): Asset returns
+        Returns:
+            np.ndarray: Shrunk covariance matrix
+        """
+        if returns.empty:
+            raise ValueError("Returns DataFrame is empty.")
         S = returns.cov().values
         n, p = returns.shape
-        
-        # Target: constant correlation matrix
         mean_var = np.trace(S) / p
         F = mean_var * np.eye(p)
-        
-        # Shrinkage intensity
-        delta = min(1.0, (n - 2) / (n * (p + 1)))
-        
+        delta = min(1.0, (n - 2) / (n * (p + 1))) if n > 2 else 1.0
         Sigma = delta * F + (1 - delta) * S
         return Sigma
-    
+
     @staticmethod
     def nearest_correlation_matrix(cov_matrix: np.ndarray) -> np.ndarray:
-        """Higham's algorithm for nearest PSD matrix"""
+        """
+        Higham's algorithm for nearest PSD matrix
+        Args:
+            cov_matrix (np.ndarray): Covariance matrix
+        Returns:
+            np.ndarray: Nearest positive semi-definite covariance matrix
+        """
         std_devs = np.sqrt(np.diag(cov_matrix))
         outer_std = np.outer(std_devs, std_devs)
         corr = cov_matrix / outer_std
-        
-        # Eigenvalue adjustment
         eigenvalues, eigenvectors = np.linalg.eigh(corr)
         eigenvalues[eigenvalues < 0] = 1e-6
-        
         corr_fixed = eigenvectors @ np.diag(eigenvalues) @ eigenvectors.T
         cov_fixed = corr_fixed * outer_std
         return cov_fixed
-
 
 class BetaEstimator:
     """Beta estimation with adjustments for thin trading."""
