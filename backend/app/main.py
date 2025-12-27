@@ -31,6 +31,15 @@ from app.core import models
 from app.core.db import engine
 import os
 import asyncio
+<<<<<<< Updated upstream
+=======
+
+# Optional: start background market-data scraper
+try:
+    from app.services.scraper import run_background_scraper
+except Exception:
+    run_background_scraper = None
+>>>>>>> Stashed changes
 
 # Optional: start background market-data scraper
 try:
@@ -72,4 +81,7 @@ async def startup_tasks():
         interval = os.getenv("SCRAPER_INTERVAL")
         # schedule background scraper but don't await it
         asyncio.create_task(run_background_scraper(provider, interval))
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes

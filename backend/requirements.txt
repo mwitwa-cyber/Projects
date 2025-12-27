@@ -8,6 +8,7 @@ scipy
 # QuantLib
 # PyPortfolioOpt
 # celery
+celery
 redis
 python-dotenv
 alembic
