@@ -5,7 +5,7 @@ from app.services.auth_service import authenticate_user, create_access_token, ge
 from app.models.user import User
 from app.models.base import get_db
 
-router = APIRouter(prefix="/auth", tags=["auth"])
+router = APIRouter(tags=["auth"])
 
 class UserCreate(BaseModel):
     username: str

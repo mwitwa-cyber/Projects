@@ -4,7 +4,7 @@ API endpoint smoke tests for frontend-backend integration.
 import requests
 import pytest
 
-BASE_URL = "http://localhost:8000/api/v1"
+BASE_URL = "http://127.0.0.1:8000/api/v1"
 
 @pytest.mark.smoke
 def test_optimization_endpoint():
@@ -37,6 +37,8 @@ def test_portfolio_crud_endpoints():
     # Create
     payload = {"name": "SmokeTest", "description": "", "portfolio_type": "personal", "holdings": []}
     resp = requests.post(f"{BASE_URL}/portfolios/", json=payload)
+    if resp.status_code == 422:
+        print(f"DEBUG: 422 Response: {resp.text}")
     assert resp.status_code in (200, 400)
     if resp.status_code == 200:
         pid = resp.json()["id"]

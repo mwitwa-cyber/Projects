@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict
 from sqlalchemy.orm import Session
-from app.core.db import get_db
+from app.core.database import get_db
 from app.models.portfolio import Portfolio, PortfolioHolding
 from app.models.asset import Asset
 

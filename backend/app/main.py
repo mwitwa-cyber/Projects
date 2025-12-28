@@ -4,9 +4,21 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.api.v1 import api_router
+import logging
+import sys
 
+# Configure logging
+LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+if settings.ENVIRONMENT == "production":
+    # Simple JSON-like format for prod (or use python-json-logger if installed)
+    LOG_FORMAT = '{"time": "%(asctime)s", "level": "%(levelname)s", "message": "%(message)s"}'
 
-print(f"[DEBUG] API_V1_PREFIX: {settings.API_V1_PREFIX}")
+logging.basicConfig(
+    level=logging.INFO,
+    format=LOG_FORMAT,
+    handlers=[logging.StreamHandler(sys.stdout)]
+)
+logger = logging.getLogger("app")
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
@@ -26,9 +38,13 @@ app.add_middleware(
 
 from app.api import market_data, valuation
 from app.core import models
-from app.core.db import engine
+from app.models import user, portfolio, asset
+from app.core.database import engine, Base
 import os
 import asyncio
+
+# Create database tables
+Base.metadata.create_all(bind=engine)
 
 # Include API router
 app.include_router(api_router, prefix=settings.API_V1_PREFIX)

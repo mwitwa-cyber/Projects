@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime, PrimaryKeyConstraint, Index
 from sqlalchemy.sql import func
-from app.core.db import Base
+from app.core.database import Base
 import datetime
 
 class Security(Base):

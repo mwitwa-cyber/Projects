@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 import os
 
 # Password hashing context
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 
 # JWT settings (should be in env vars in production)
 SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "dev_secret")

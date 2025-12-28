@@ -1,44 +1,40 @@
 import pytest
-from app.models.asset import Asset, AssetType, Sector
-@pytest.fixture(scope="session", autouse=True)
-def seed_assets(db_session):
-    """Seed required assets for integration tests."""
-    tickers = [
-        {"ticker": "ZCCM-IH", "name": "ZCCM Investments Holdings", "asset_type": AssetType.EQUITY, "sector": Sector.MINING},
-        {"ticker": "Zanaco", "name": "Zambia National Commercial Bank", "asset_type": AssetType.EQUITY, "sector": Sector.BANKING},
-    ]
-    for t in tickers:
-        if not db_session.query(Asset).filter_by(ticker=t["ticker"]).first():
-            asset = Asset(
-                ticker=t["ticker"],
-                name=t["name"],
-                asset_type=t["asset_type"],
-                sector=t["sector"]
-            )
-            db_session.add(asset)
-    db_session.commit()
-"""Pytest configuration and fixtures."""
-
-import pytest
-
+import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from app.core.db import Base
+from fastapi.testclient import TestClient
+from app.main import app
+from app.core.database import Base, get_db
+from app.models.user import User
+from app.models.portfolio import Portfolio
 
-# Import the models package to ensure all models are registered
-import app.models
-
-import os
+# Use test database or fallback to local
 TEST_DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:password@localhost:5432/luse_quant")
+
+engine = create_engine(TEST_DATABASE_URL)
+TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 @pytest.fixture(scope="session")
 def db_session():
-    """Create a test database session with all tables for the session."""
-    engine = create_engine(TEST_DATABASE_URL)
+    """Create a test database session."""
     Base.metadata.create_all(bind=engine)
-    TestingSessionLocal = sessionmaker(bind=engine)
     session = TestingSessionLocal()
-    try:
-        yield session
-    finally:
-        session.close()
+    yield session
+    session.close()
+    # Base.metadata.drop_all(bind=engine) # Optional: Clean up after tests
+
+@pytest.fixture(scope="module")
+def client():
+    """Test client fixture."""
+    # Override get_db dependency
+    def override_get_db():
+        try:
+            db = TestingSessionLocal()
+            yield db
+        finally:
+            db.close()
+    
+    app.dependency_overrides[get_db] = override_get_db
+    with TestClient(app) as c:
+        yield c
+    app.dependency_overrides.clear()

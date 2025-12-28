@@ -10,10 +10,11 @@ class Settings(BaseSettings):
     # Application
     APP_NAME: str = "LuSE Quantitative Platform"
     APP_VERSION: str = "0.1.0"
-    DEBUG: bool = True
+    DEBUG: bool = False
+    ENVIRONMENT: str = "production"
     
     # Database
-    DATABASE_URL: str = "postgresql://postgres:password@localhost:5432/luse_quant"
+    DATABASE_URL: str
     DB_ECHO: bool = False
     
     # Redis
@@ -24,7 +25,7 @@ class Settings(BaseSettings):
     CORS_ORIGINS: list[str] = ["http://localhost:5173", "http://localhost:3000"]
     
     # Security
-    SECRET_KEY: str = "your-secret-key-change-in-production"
+    SECRET_KEY: str
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 hours
     
