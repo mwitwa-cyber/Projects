@@ -1,26 +1,16 @@
 import { useState } from 'react';
-<<<<<<< Updated upstream
 import type { FormEvent } from 'react';
 import { Loader2, AlertCircle, PieChart as PieChartIcon, Trash2 } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, ScatterChart, Scatter, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { optimizationAPI } from '../services/api';
 
 // Asset type definition
-=======
-import { Loader2, AlertCircle, PieChart as PieChartIcon, Trash2 } from 'lucide-react';
-import { PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, ScatterChart, Scatter } from 'recharts';
-import { optimizationAPI } from '../services/api';
-
->>>>>>> Stashed changes
 interface Asset {
     ticker: string;
     returns: number[];
 }
 
-<<<<<<< Updated upstream
 // Optimization API result type
-=======
->>>>>>> Stashed changes
 interface OptimizationResult {
     optimal_weights: Record<string, number>;
     expected_return: number;
@@ -28,10 +18,7 @@ interface OptimizationResult {
     sharpe_ratio: number;
 }
 
-<<<<<<< Updated upstream
 // Efficient frontier API result type
-=======
->>>>>>> Stashed changes
 interface FrontierResult {
     frontierPoints: Array<{ volatility: number; return: number }>;
     optimalPoint: { volatility: number; return: number };
@@ -39,19 +26,15 @@ interface FrontierResult {
 
 const COLORS = ['#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
 
-<<<<<<< Updated upstream
 /**
  * PortfolioOptimizer component: UI for multi-asset portfolio optimization and visualization.
  */
-=======
->>>>>>> Stashed changes
 export const PortfolioOptimizer = () => {
     const [assets, setAssets] = useState<Asset[]>([
         { ticker: 'CECZ', returns: [0.02, 0.03, -0.01, 0.04, 0.01, 0.02, -0.02, 0.03] },
         { ticker: 'ZANACO', returns: [0.01, 0.02, 0.01, 0.02, 0.03, 0.01, 0.02, 0.01] },
         { ticker: 'SCBL', returns: [0.015, 0.025, 0.005, 0.03, 0.02, 0.01, 0.03, 0.025] },
     ]);
-<<<<<<< Updated upstream
     const [riskFreeRate, setRiskFreeRate] = useState<number>(0.20);
     const [objective, setObjective] = useState<'max_sharpe' | 'min_variance' | 'equal_weight'>('max_sharpe');
     const [result, setResult] = useState<OptimizationResult | null>(null);
@@ -61,53 +44,28 @@ export const PortfolioOptimizer = () => {
     const [activeTab, setActiveTab] = useState<'weights' | 'frontier'>('weights');
 
     // Add a new asset row
-=======
-
-    const [riskFreeRate, setRiskFreeRate] = useState(0.20);
-    const [objective, setObjective] = useState<'max_sharpe' | 'min_variance' | 'equal_weight'>('max_sharpe');
-    const [result, setResult] = useState<OptimizationResult | null>(null);
-    const [frontierData, setFrontierData] = useState<FrontierResult | null>(null);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
-    const [activeTab, setActiveTab] = useState<'weights' | 'frontier'>('weights');
-
->>>>>>> Stashed changes
     const addAsset = () => {
         setAssets([...assets, { ticker: '', returns: [] }]);
     };
 
-<<<<<<< Updated upstream
     // Remove an asset row by index
-=======
->>>>>>> Stashed changes
     const removeAsset = (index: number) => {
         setAssets(assets.filter((_, i) => i !== index));
     };
 
-<<<<<<< Updated upstream
     // Update asset ticker or returns
     const updateAsset = (index: number, field: 'ticker' | 'returns', value: string) => {
         const newAssets = [...assets];
         if (field === 'returns') {
             newAssets[index].returns = value.split(',').map((v: string) => parseFloat(v.trim())).filter((v) => !isNaN(v));
-=======
-    const updateAsset = (index: number, field: 'ticker' | 'returns', value: any) => {
-        const newAssets = [...assets];
-        if (field === 'returns') {
-            newAssets[index].returns = value.split(',').map((v: string) => parseFloat(v.trim())).filter((v: any) => !isNaN(v));
->>>>>>> Stashed changes
         } else {
             newAssets[index].ticker = value.toUpperCase();
         }
         setAssets(newAssets);
     };
 
-<<<<<<< Updated upstream
     // Handle optimization form submit
     const handleOptimize = async (e: FormEvent) => {
-=======
-    const handleOptimize = async (e: React.FormEvent) => {
->>>>>>> Stashed changes
         e.preventDefault();
         setLoading(true);
         setError('');
@@ -319,13 +277,8 @@ export const PortfolioOptimizer = () => {
                         <button
                             onClick={() => setActiveTab('weights')}
                             className={`px-4 py-2 font-medium border-b-2 transition ${activeTab === 'weights'
-<<<<<<< Updated upstream
                                 ? 'border-blue-500 text-blue-400'
                                 : 'border-transparent text-slate-400 hover:text-slate-300'
-=======
-                                    ? 'border-blue-500 text-blue-400'
-                                    : 'border-transparent text-slate-400 hover:text-slate-300'
->>>>>>> Stashed changes
                                 }`}
                         >
                             Asset Allocation
@@ -333,13 +286,8 @@ export const PortfolioOptimizer = () => {
                         <button
                             onClick={() => setActiveTab('frontier')}
                             className={`px-4 py-2 font-medium border-b-2 transition ${activeTab === 'frontier'
-<<<<<<< Updated upstream
                                 ? 'border-blue-500 text-blue-400'
                                 : 'border-transparent text-slate-400 hover:text-slate-300'
-=======
-                                    ? 'border-blue-500 text-blue-400'
-                                    : 'border-transparent text-slate-400 hover:text-slate-300'
->>>>>>> Stashed changes
                                 }`}
                         >
                             Efficient Frontier

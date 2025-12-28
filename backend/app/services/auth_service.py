@@ -1,7 +1,7 @@
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
-from backend.app.models.user import User
+from app.models.user import User
 from sqlalchemy.orm import Session
 import os
 
