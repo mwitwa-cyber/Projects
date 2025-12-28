@@ -1,12 +1,19 @@
-from app.core.db import SessionLocal, engine
-from app.core import models
+
+from app.core.db import SessionLocal, engine, Base
 from app.services.market_data import MarketDataService
 from datetime import date, timedelta
 import random
 
+# Import all models to ensure all tables are registered with SQLAlchemy's metadata
+import app.models.asset
+import app.models.price_history
+import app.models.portfolio
+import app.models.yield_curve
+import app.models.market_data
+
 def seed():
-    # Ensure tables exist
-    models.Base.metadata.create_all(bind=engine)
+    # Ensure all tables exist
+    Base.metadata.create_all(bind=engine)
     
     db = SessionLocal()
     service = MarketDataService(db)

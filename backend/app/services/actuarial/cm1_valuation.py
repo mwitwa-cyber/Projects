@@ -1,3 +1,14 @@
+# Facade for test compatibility
+class CM1Valuation:
+    """Facade for core CM1 actuarial calculations (for test compatibility)."""
+    def price(self, face_value, coupon_rate, yield_rate, years):
+        return BondPricer.price(face_value, coupon_rate, yield_rate, years)
+
+    def duration(self, face_value, coupon_rate, yield_rate, years):
+        return BondPricer.duration(face_value, coupon_rate, yield_rate, years)
+
+    def discounted_cash_flows(self, face_value, coupon_rate, yield_rate, years):
+        return BondPricer.discounted_cash_flows(face_value, coupon_rate, yield_rate, years)
 # backend/app/services/actuarial/cm1_valuation.py
 """
 CM1 Module: Deterministic Valuation
@@ -116,7 +127,30 @@ class AnnuityCalculator:
 
 class BondPricer:
     """Bond pricing and yield calculations."""
-    
+
+    @staticmethod
+    def price(face_value, coupon_rate, yield_rate, years):
+        return BondPricer.bond_price(face_value, coupon_rate, yield_rate, years)
+
+    @staticmethod
+    def duration(face_value, coupon_rate, yield_rate, years):
+        return BondPricer.macaulay_duration(face_value, coupon_rate, yield_rate, years)
+
+    @staticmethod
+    def discounted_cash_flows(face_value, coupon_rate, yield_rate, years):
+        # Return a list of discounted cash flows for each period
+        frequency = 2
+        n_periods = int(years * frequency)
+        coupon_payment = (coupon_rate / frequency) * face_value
+        period_yield = yield_rate / frequency
+        dcfs = []
+        for t in range(1, n_periods + 1):
+            pv = coupon_payment * TimeValueOfMoney.discount_factor(period_yield, t)
+            dcfs.append(pv)
+        pv_face = face_value * TimeValueOfMoney.discount_factor(period_yield, n_periods)
+        dcfs.append(pv_face)
+        return dcfs
+
     @staticmethod
     def bond_price(
         face_value: float,
@@ -129,7 +163,6 @@ class BondPricer:
         n_periods = int(years_to_maturity * frequency)
         coupon_payment = (coupon_rate / frequency) * face_value
         period_yield = yield_rate / frequency
-        
         # PV of coupon payments
         if period_yield != 0:
             pv_coupons = coupon_payment * AnnuityCalculator.annuity_immediate(
@@ -137,12 +170,10 @@ class BondPricer:
             )
         else:
             pv_coupons = coupon_payment * n_periods
-        
         # PV of face value
         pv_face = face_value * TimeValueOfMoney.discount_factor(
             period_yield, n_periods
         )
-        
         return pv_coupons + pv_face
     
     @staticmethod

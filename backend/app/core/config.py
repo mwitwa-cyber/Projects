@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     DEBUG: bool = True
     
     # Database
-    DATABASE_URL: str = "postgresql://postgres:password@db:5432/luse_quant"
+    DATABASE_URL: str = "postgresql://postgres:password@localhost:5432/luse_quant"
     DB_ECHO: bool = False
     
     # Redis

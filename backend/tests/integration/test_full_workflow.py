@@ -49,10 +49,11 @@ def test_portfolio_creation_to_optimization():
 def test_valuation_pipeline():
     # Bond pricing with live yield curve
     bond_data = {
+        "face_value": 1000,
         "coupon_rate": 0.12,
-        "maturity": "2030-12-31",
-        "ytm": 0.15,
-        "face_value": 1000
+        "yield_rate": 0.15,
+        "years_to_maturity": 5,
+        "frequency": 2
     }
     resp = requests.post(f"{BASE_URL}/valuation/bond/price", json=bond_data)
     assert resp.status_code == 200

@@ -9,13 +9,26 @@ BASE_URL = "http://localhost:8000/api/v1"
 @pytest.mark.smoke
 def test_optimization_endpoint():
     # Minimal valid payload for optimization
-    payload = {"portfolio_id": 1, "objective": "max_sharpe"}
+    # Example returns_data for two assets
+    payload = {
+        "returns_data": {
+            "AssetA": [0.01, 0.02, 0.015],
+            "AssetB": [0.012, 0.018, 0.017]
+        },
+        "objective": "max_sharpe"
+    }
     resp = requests.post(f"{BASE_URL}/optimization/optimize", json=payload)
-    assert resp.status_code in (200, 400)  # 400 if portfolio doesn't exist
+    assert resp.status_code in (200, 400)  # 400 if returns are insufficient
 
 @pytest.mark.smoke
 def test_bond_valuation_endpoint():
-    payload = {"coupon_rate": 0.12, "maturity": "2030-12-31", "ytm": 0.15, "face_value": 1000}
+    payload = {
+        "face_value": 1000,
+        "coupon_rate": 0.12,
+        "yield_rate": 0.15,
+        "years_to_maturity": 5,
+        "frequency": 2
+    }
     resp = requests.post(f"{BASE_URL}/valuation/bond/price", json=payload)
     assert resp.status_code in (200, 400)
 

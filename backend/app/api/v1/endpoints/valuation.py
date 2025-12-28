@@ -114,11 +114,13 @@ async def dcf_valuation(request: DCFRequest):
         raise HTTPException(status_code=400, detail=str(e))
 
 
+from fastapi import Query
+
 @router.get("/annuity/{annuity_type}")
 async def calculate_annuity(
     annuity_type: str,
-    interest_rate: float = Field(..., gt=0, description="Interest rate"),
-    periods: int = Field(..., gt=0, description="Number of periods")
+    interest_rate: float = Query(..., gt=0, description="Interest rate"),
+    periods: int = Query(..., gt=0, description="Number of periods")
 ):
     """
     Calculate annuity present value.
@@ -147,11 +149,11 @@ async def calculate_annuity(
 
 @router.post("/bond/ytm")
 async def calculate_ytm(
-    price: float = Field(..., gt=0),
-    face_value: float = Field(..., gt=0),
-    coupon_rate: float = Field(..., ge=0, le=1),
-    years_to_maturity: float = Field(..., gt=0),
-    frequency: int = Field(2)
+    price: float = Query(..., gt=0, description="Bond price"),
+    face_value: float = Query(..., gt=0, description="Face value"),
+    coupon_rate: float = Query(..., ge=0, le=1, description="Annual coupon rate"),
+    years_to_maturity: float = Query(..., gt=0, description="Years to maturity"),
+    frequency: int = Query(2, description="Coupon frequency per year")
 ):
     """Calculate Yield to Maturity using Newton-Raphson method."""
     try:

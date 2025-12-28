@@ -10,7 +10,6 @@ from app.models.yield_curve import YieldCurveData
 
 engine = create_engine(settings.DATABASE_URL)
 Session = sessionmaker(bind=engine)
-
 @pytest.mark.data_quality
 def test_luse_prices_within_bounds():
     session = Session()

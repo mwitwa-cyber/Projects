@@ -106,11 +106,13 @@ async def generate_frontier(request: EfficientFrontierRequest):
         raise HTTPException(status_code=400, detail=str(e))
 
 
+from fastapi import Query, Body
+
 @router.post("/risk/var")
 async def calculate_var(
-    returns: List[float] = Field(..., description="Return series"),
-    confidence_level: float = Field(0.99, ge=0.90, le=0.99),
-    method: str = Field("historical", description="VaR method")
+    returns: List[float] = Body(..., description="Return series"),
+    confidence_level: float = Query(0.99, ge=0.90, le=0.99, description="Confidence level"),
+    method: str = Query("historical", description="VaR method")
 ):
     """Calculate Value at Risk (VaR)."""
     try:
@@ -138,8 +140,8 @@ async def calculate_var(
 
 @router.post("/risk/cvar")
 async def calculate_cvar(
-    returns: List[float] = Field(...),
-    confidence_level: float = Field(0.99, ge=0.90, le=0.99)
+    returns: List[float] = Body(..., description="Return series"),
+    confidence_level: float = Query(0.99, ge=0.90, le=0.99, description="Confidence level")
 ):
     """Calculate Conditional VaR (Expected Shortfall)."""
     try:
@@ -172,9 +174,9 @@ async def calculate_cvar(
 
 @router.post("/beta")
 async def calculate_beta(
-    asset_returns: List[float] = Field(..., description="Asset returns"),
-    market_returns: List[float] = Field(..., description="Market returns"),
-    method: str = Field("scholes_williams", description="Beta calculation method")
+    asset_returns: List[float] = Body(..., description="Asset returns"),
+    market_returns: List[float] = Body(..., description="Market returns"),
+    method: str = Query("scholes_williams", description="Beta calculation method")
 ):
     """
     Calculate beta coefficient.
