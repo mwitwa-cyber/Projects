@@ -7,7 +7,7 @@ from datetime import date, datetime
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.core.database import get_db
 from app.services.bitemporal_service import BitemporalService
@@ -16,7 +16,10 @@ from app.services.bitemporal_service import BitemporalService
 router = APIRouter()
 
 
+# ==================== Request/Response Models ====================
+
 class PriceCorrection(BaseModel):
+    """Request model for price correction."""
     asset_id: int
     trade_date: date
     corrected_close_price: float
@@ -28,6 +31,7 @@ class PriceCorrection(BaseModel):
 
 
 class PriceResponse(BaseModel):
+    """Response model for price data."""
     asset_id: int
     trade_date: date
     close_price: float
@@ -40,12 +44,13 @@ class PriceResponse(BaseModel):
     transaction_from: datetime
     transaction_to: Optional[datetime]
     is_current: bool
-
+    
     class Config:
         from_attributes = True
 
 
 class CorrectionAudit(BaseModel):
+    """Response model for correction audit."""
     trade_date: date
     corrected_at: datetime
     old_close_price: float
@@ -54,18 +59,24 @@ class CorrectionAudit(BaseModel):
     price_change_pct: Optional[float]
 
 
+# ==================== Endpoints ====================
+
 @router.get("/price/current/{asset_id}/{trade_date}", response_model=PriceResponse)
 def get_current_price(
     asset_id: int,
     trade_date: date,
     db: Session = Depends(get_db)
 ):
+    """Get the current version of price data for a specific date."""
     service = BitemporalService(db)
     price = service.get_current_price(asset_id, trade_date)
-
+    
     if not price:
-        raise HTTPException(status_code=404, detail=f"No price data found for asset {asset_id} on {trade_date}")
-
+        raise HTTPException(
+            status_code=404,
+            detail=f"No price data found for asset {asset_id} on {trade_date}"
+        )
+    
     return price
 
 
@@ -76,12 +87,20 @@ def get_price_as_of_transaction(
     as_of: datetime = Query(..., description="Transaction time to query"),
     db: Session = Depends(get_db)
 ):
+    """Get price data as it was recorded in the system at a specific time.
+    
+    This is critical for backtesting - it shows what data was available
+    at the time the decision would have been made.
+    """
     service = BitemporalService(db)
     price = service.get_price_as_of_transaction_time(asset_id, trade_date, as_of)
-
+    
     if not price:
-        raise HTTPException(status_code=404, detail=f"No price data found for asset {asset_id} on {trade_date} as of {as_of}")
-
+        raise HTTPException(
+            status_code=404,
+            detail=f"No price data found for asset {asset_id} on {trade_date} as of {as_of}"
+        )
+    
     return price
 
 
@@ -90,11 +109,25 @@ def get_price_history(
     asset_id: int,
     start_date: date = Query(..., description="Start date"),
     end_date: date = Query(..., description="End date"),
-    as_of_transaction: Optional[datetime] = Query(None, description="Optional transaction time for historical view"),
+    as_of_transaction: Optional[datetime] = Query(
+        None, 
+        description="Optional transaction time for historical view"
+    ),
     db: Session = Depends(get_db)
 ):
+    """Get price history for a date range.
+    
+    If as_of_transaction is provided, returns data as it existed in the
+    system at that time (for backtesting).
+    """
     service = BitemporalService(db)
-    prices = service.get_price_history_range(asset_id, start_date, end_date, as_of_transaction)
+    prices = service.get_price_history_range(
+        asset_id, 
+        start_date, 
+        end_date,
+        as_of_transaction
+    )
+    
     return prices
 
 
@@ -103,7 +136,13 @@ def correct_price(
     correction: PriceCorrection,
     db: Session = Depends(get_db)
 ):
+    """Correct an existing price record while preserving history.
+    
+    This creates a new version of the price record with corrected data,
+    while keeping the old version for audit purposes.
+    """
     service = BitemporalService(db)
+    
     try:
         corrected_price = service.correct_price(
             asset_id=correction.asset_id,
@@ -126,13 +165,19 @@ def get_corrections_audit(
     end_date: Optional[date] = Query(None, description="End date"),
     db: Session = Depends(get_db)
 ):
+    """Get an audit trail of all price corrections for an asset.
+    
+    This is useful for compliance and understanding data quality.
+    """
     service = BitemporalService(db)
     corrections = service.get_corrections_audit(asset_id, start_date, end_date)
+    
     return corrections
 
 
 @router.get("/health")
 def bitemporal_health():
+    """Health check endpoint."""
     return {
         "status": "healthy",
         "service": "bitemporal",
@@ -140,6 +185,6 @@ def bitemporal_health():
             "point_in_time_queries",
             "transaction_time_queries",
             "price_corrections",
-            "audit_trail",
-        ],
+            "audit_trail"
+        ]
     }
