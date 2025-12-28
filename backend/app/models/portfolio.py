@@ -33,7 +33,11 @@ class Portfolio(BaseModel, TimestampMixin):
     total_value = Column(Float, default=0.0)
     cash_balance = Column(Float, default=0.0)
     
+    # Foreign Key to User
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+
     # Relationships
+    user = relationship("User", back_populates="portfolios")
     holdings = relationship("PortfolioHolding", back_populates="portfolio", cascade="all, delete-orphan")
     
     def __repr__(self):

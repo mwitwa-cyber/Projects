@@ -4,7 +4,7 @@ from datetime import datetime
 from sqlalchemy import Column, Integer, DateTime, Boolean
 from sqlalchemy.sql import func
 
-from app.core.database import Base
+from app.core.database import Base, get_db
 
 
 class BitemporalMixin:

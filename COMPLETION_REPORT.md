@@ -283,7 +283,8 @@
 
 ### UI/UX
 - [x] Dark theme applied
-- [x] Responsive design implemented
+- [x] Responsive design implementedcd backend
+uvicorn app.main:app --reload
 - [x] Charts rendering
 - [x] Forms validating
 - [x] Messages displaying

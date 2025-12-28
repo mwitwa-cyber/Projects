@@ -5,6 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.api.v1 import api_router
 
+
+print(f"[DEBUG] API_V1_PREFIX: {settings.API_V1_PREFIX}")
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,

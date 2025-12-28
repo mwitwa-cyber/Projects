@@ -1,44 +1,31 @@
-import { useState } from 'react';
-<<<<<<< Updated upstream
-import type { FormEvent } from 'react';
-=======
->>>>>>> Stashed changes
+
+import React, { useState } from 'react';
 import { Loader2, AlertCircle, TrendingDown } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
-import { riskAPI, optimizationAPI } from '../services/api';
 
-<<<<<<< Updated upstream
-// Types for API results
-=======
->>>>>>> Stashed changes
+
+// Type definitions
 interface RiskResult {
     var_value: number;
     confidence_level: number;
     method: string;
 }
-
 interface CVaRResult {
     cvar_value: number;
     confidence_level: number;
 }
-
 interface BetaResult {
     beta: number;
     alpha?: number;
     r_squared?: number;
 }
 
-<<<<<<< Updated upstream
-/**
- * RiskAnalyzer component: UI for Value at Risk (VaR), CVaR, and Beta analytics.
- */
-=======
->>>>>>> Stashed changes
-export const RiskAnalyzer = () => {
-    const [activeTab, setActiveTab] = useState<'var' | 'beta'>('var');
+import { riskAPI, optimizationAPI } from '../services/api';
 
-    // VaR State
-<<<<<<< Updated upstream
+
+export const RiskAnalyzer = () => {
+    // State hooks
+    const [activeTab, setActiveTab] = useState<'var' | 'beta'>('var');
     const [varReturns, setVarReturns] = useState<string>('0.02, -0.03, 0.04, -0.01, 0.05, 0.03, -0.02, 0.01, 0.06, -0.04');
     const [varConfidence, setVarConfidence] = useState<number>(0.95);
     const [varMethod, setVarMethod] = useState<'historical' | 'parametric' | 'monte_carlo'>('historical');
@@ -46,35 +33,14 @@ export const RiskAnalyzer = () => {
     const [cvarResult, setCvarResult] = useState<CVaRResult | null>(null);
     const [varLoading, setVarLoading] = useState<boolean>(false);
     const [varError, setVarError] = useState<string>('');
-
-    // Beta State
     const [assetReturns, setAssetReturns] = useState<string>('0.02, 0.03, -0.01, 0.04, 0.01, 0.02, -0.02, 0.03');
     const [marketReturns, setMarketReturns] = useState<string>('0.01, 0.02, -0.005, 0.03, 0.015, 0.01, -0.01, 0.025');
     const [betaResult, setBetaResult] = useState<BetaResult | null>(null);
     const [betaLoading, setBetaLoading] = useState<boolean>(false);
     const [betaError, setBetaError] = useState<string>('');
 
-    // VaR Handler
-    const handleCalculateVaR = async (e: FormEvent) => {
-=======
-    const [varReturns, setVarReturns] = useState('0.02, -0.03, 0.04, -0.01, 0.05, 0.03, -0.02, 0.01, 0.06, -0.04');
-    const [varConfidence, setVarConfidence] = useState(0.95);
-    const [varMethod, setVarMethod] = useState<'historical' | 'parametric' | 'monte_carlo'>('historical');
-    const [varResult, setVarResult] = useState<RiskResult | null>(null);
-    const [cvarResult, setCvarResult] = useState<CVaRResult | null>(null);
-    const [varLoading, setVarLoading] = useState(false);
-    const [varError, setVarError] = useState('');
-
-    // Beta State
-    const [assetReturns, setAssetReturns] = useState('0.02, 0.03, -0.01, 0.04, 0.01, 0.02, -0.02, 0.03');
-    const [marketReturns, setMarketReturns] = useState('0.01, 0.02, -0.005, 0.03, 0.015, 0.01, -0.01, 0.025');
-    const [betaResult, setBetaResult] = useState<BetaResult | null>(null);
-    const [betaLoading, setBetaLoading] = useState(false);
-    const [betaError, setBetaError] = useState('');
-
-    // VaR Handler
+    // Handler for VaR calculation
     const handleCalculateVaR = async (e: React.FormEvent) => {
->>>>>>> Stashed changes
         e.preventDefault();
         setVarLoading(true);
         setVarError('');
@@ -84,13 +50,8 @@ export const RiskAnalyzer = () => {
         try {
             const returns = varReturns
                 .split(',')
-<<<<<<< Updated upstream
                 .map((v: string) => parseFloat(v.trim()))
                 .filter((v: number) => !isNaN(v));
-=======
-                .map(v => parseFloat(v.trim()))
-                .filter(v => !isNaN(v));
->>>>>>> Stashed changes
 
             if (returns.length === 0) {
                 setVarError('Please enter valid return values');
@@ -212,13 +173,8 @@ export const RiskAnalyzer = () => {
                 <button
                     onClick={() => setActiveTab('var')}
                     className={`px-4 py-2 font-medium border-b-2 transition ${activeTab === 'var'
-<<<<<<< Updated upstream
                         ? 'border-red-500 text-red-400'
                         : 'border-transparent text-slate-400 hover:text-slate-300'
-=======
-                            ? 'border-red-500 text-red-400'
-                            : 'border-transparent text-slate-400 hover:text-slate-300'
->>>>>>> Stashed changes
                         }`}
                 >
                     Value at Risk
@@ -226,13 +182,8 @@ export const RiskAnalyzer = () => {
                 <button
                     onClick={() => setActiveTab('beta')}
                     className={`px-4 py-2 font-medium border-b-2 transition ${activeTab === 'beta'
-<<<<<<< Updated upstream
                         ? 'border-blue-500 text-blue-400'
                         : 'border-transparent text-slate-400 hover:text-slate-300'
-=======
-                            ? 'border-blue-500 text-blue-400'
-                            : 'border-transparent text-slate-400 hover:text-slate-300'
->>>>>>> Stashed changes
                         }`}
                 >
                     Beta Calculation
@@ -275,13 +226,8 @@ export const RiskAnalyzer = () => {
                                                 type="button"
                                                 onClick={() => setVarConfidence(level)}
                                                 className={`flex-1 py-2 px-3 rounded-lg font-medium transition ${varConfidence === level
-<<<<<<< Updated upstream
                                                     ? 'bg-red-500/30 border border-red-500 text-red-300'
                                                     : 'bg-white/10 border border-white/20 text-slate-300 hover:bg-white/15'
-=======
-                                                        ? 'bg-red-500/30 border border-red-500 text-red-300'
-                                                        : 'bg-white/10 border border-white/20 text-slate-300 hover:bg-white/15'
->>>>>>> Stashed changes
                                                     }`}
                                             >
                                                 {(level * 100).toFixed(0)}%
@@ -500,6 +446,8 @@ export const RiskAnalyzer = () => {
                     )}
                 </div>
             )}
+
         </div>
     );
-};
+}
+
