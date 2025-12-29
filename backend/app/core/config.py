@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     
     # API
     API_V1_PREFIX: str = "/api/v1"
-    CORS_ORIGINS: list[str] = ["http://localhost:5173", "http://localhost:3000"]
+    CORS_ORIGINS: list[str] = ["http://localhost:5173", "http://localhost:3000", "http://localhost", "http://localhost:80", "http://127.0.0.1", "http://127.0.0.1:80"]
     
     # Security
     SECRET_KEY: str

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { authService } from '../../services/authService';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, LogIn } from 'lucide-react';
+import { Loader2, AlertCircle } from 'lucide-react';
 
 export const Login = () => {
     const [username, setUsername] = useState('');
@@ -28,44 +28,55 @@ export const Login = () => {
 
     return (
         <div className="min-h-[60vh] flex items-center justify-center">
-            <div className="bg-white/5 border border-white/10 p-8 rounded-xl w-full max-w-md backdrop-blur-sm">
-                <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-                    <LogIn className="w-6 h-6 text-blue-400" />
-                    Login
-                </h2>
-                {error && <div className="bg-red-500/20 text-red-300 p-3 rounded mb-4 text-sm">{error}</div>}
-                <form onSubmit={handleLogin} className="space-y-4">
+            <div className="bg-fintech-card border border-fintech-border p-8 rounded-xl w-full max-w-md shadow-2xl shadow-black/50">
+                <div className="mb-8 text-center">
+                    <h2 className="text-3xl font-bold bg-gradient-to-r from-fintech-primary to-fintech-success bg-clip-text text-transparent mb-2">
+                        Welcome Back
+                    </h2>
+                    <p className="text-fintech-text-muted text-sm">Enter your credentials to access the terminal</p>
+                </div>
+
+                {error && (
+                    <div className="bg-fintech-error/10 border border-fintech-error/20 text-fintech-error p-3 rounded mb-6 text-sm flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4" />
+                        {error}
+                    </div>
+                )}
+
+                <form onSubmit={handleLogin} className="space-y-5">
                     <div>
-                        <label className="block text-slate-400 text-sm mb-1">Username</label>
+                        <label className="block text-fintech-text-secondary text-sm font-medium mb-1.5">Username</label>
                         <input
                             type="text"
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
-                            className="w-full bg-slate-900/50 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500"
+                            className="w-full bg-fintech-bg border border-fintech-border rounded-lg px-4 py-2.5 text-fintech-text-primary focus:outline-none focus:border-fintech-primary focus:ring-1 focus:ring-fintech-primary transition-colors placeholder:text-fintech-text-muted/50"
+                            placeholder="Enter username"
                             required
                         />
                     </div>
                     <div>
-                        <label className="block text-slate-400 text-sm mb-1">Password</label>
+                        <label className="block text-fintech-text-secondary text-sm font-medium mb-1.5">Password</label>
                         <input
                             type="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="w-full bg-slate-900/50 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500"
+                            className="w-full bg-fintech-bg border border-fintech-border rounded-lg px-4 py-2.5 text-fintech-text-primary focus:outline-none focus:border-fintech-primary focus:ring-1 focus:ring-fintech-primary transition-colors placeholder:text-fintech-text-muted/50"
+                            placeholder="••••••••"
                             required
                         />
                     </div>
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium py-2 rounded-lg transition disabled:opacity-50 flex items-center justify-center gap-2"
+                        className="w-full bg-fintech-primary hover:bg-fintech-primary-dark text-fintech-bg font-bold py-2.5 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(56,189,248,0.2)] hover:shadow-[0_0_20px_rgba(56,189,248,0.4)]"
                     >
-                        {loading ? <Loader2 className="animate-spin w-4 h-4" /> : 'Sign In'}
+                        {loading ? <Loader2 className="animate-spin w-4 h-4" /> : 'Access Terminal'}
                     </button>
                 </form>
-                <div className="mt-4 text-center">
-                    <button onClick={() => navigate('/register')} className="text-blue-400 hover:text-blue-300 text-sm">
-                        Don't have an account? Register
+                <div className="mt-6 text-center">
+                    <button onClick={() => navigate('/register')} className="text-fintech-text-muted hover:text-fintech-primary text-sm transition-colors">
+                        New user? Create an account
                     </button>
                 </div>
             </div>
