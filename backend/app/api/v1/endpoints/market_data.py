@@ -1,15 +1,63 @@
-"""Market data endpoints for API v1."""
+from typing import List, Optional
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy.orm import Session
+from datetime import date
 
-from fastapi import APIRouter, HTTPException
+from app.core.db import get_db
+from app.services.market_data import MarketDataService
 from pydantic import BaseModel
 
 router = APIRouter()
 
-class MarketDataResponse(BaseModel):
-    lasi_value: float = 5000.0
-    date: str = "2025-12-28"
+class PricePoint(BaseModel):
+    date: str
+    value: float
 
-@router.get("/luse/latest", response_model=MarketDataResponse)
+class MarketSummaryItem(BaseModel):
+    ticker: str
+    name: str
+    sector: Optional[str] = None
+    price: Optional[float] = None
+    change: float = 0.0
+    change_percent: float = 0.0
+    history: List[PricePoint] = []
+
+class SecurityResponse(BaseModel):
+    ticker: str
+    name: str
+    sector: str
+
+@router.get("/market-summary", response_model=List[MarketSummaryItem])
+def get_market_summary(
+    date_str: Optional[str] = Query(None, alias="date"),
+    db: Session = Depends(get_db)
+):
+    """
+    Get market summary for a specific date (default: today).
+    Includes price, change, and 30-day sparkline history.
+    """
+    service = MarketDataService(db)
+    target_date = date.today()
+    if date_str:
+        try:
+            target_date = date.fromisoformat(date_str)
+        except ValueError:
+            pass # Fallback to today
+            
+    summary = service.get_market_summary(target_date)
+    return summary
+
+@router.get("/securities", response_model=List[SecurityResponse])
+def get_securities(db: Session = Depends(get_db)):
+    """Get list of all securities."""
+    # Quick ad-hoc query since service doesn't have a direct method for just this, 
+    # or we can extract from summary.
+    # Better to query Security model directly or add method to service.
+    # For now, using service internal session or replicating valid logic.
+    from app.core.models import Security
+    securities = db.query(Security).all()
+    return [{"ticker": s.ticker, "name": s.name, "sector": s.sector} for s in securities]
+
+@router.get("/luse/latest")
 def get_luse_latest():
-    # Dummy response for test pass; replace with real data logic as needed
-    return MarketDataResponse()
+    return {"status": "deprecated", "message": "Use /market-summary"}
