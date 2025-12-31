@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { FormEvent } from 'react';
 import { Loader2, AlertCircle, PieChart as PieChartIcon, Trash2 } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, ScatterChart, Scatter, CartesianGrid, XAxis, YAxis } from 'recharts';
@@ -43,9 +43,26 @@ export const PortfolioOptimizer = () => {
     const [error, setError] = useState<string>('');
     const [activeTab, setActiveTab] = useState<'weights' | 'frontier'>('weights');
 
+    const [availableSecurities, setAvailableSecurities] = useState<string[]>([]);
+
+    useEffect(() => {
+        const fetchSecurities = async () => {
+            try {
+                const response = await fetch('http://localhost:8000/api/v1/market-data/securities');
+                if (response.ok) {
+                    const data = await response.json();
+                    setAvailableSecurities(data.map((s: any) => s.ticker));
+                }
+            } catch (err) {
+                console.error("Failed to fetch securities", err);
+            }
+        };
+        fetchSecurities();
+    }, []);
+
     // Add a new asset row
     const addAsset = () => {
-        setAssets([...assets, { ticker: '', returns: [] }]);
+        setAssets([...assets, { ticker: availableSecurities[0] || '', returns: [] }]);
     };
 
     // Remove an asset row by index
@@ -191,13 +208,21 @@ export const PortfolioOptimizer = () => {
                         <div className="space-y-3 max-h-48 overflow-y-auto">
                             {assets.map((asset, idx) => (
                                 <div key={idx} className="flex gap-3">
-                                    <input
-                                        type="text"
+                                    <select
                                         value={asset.ticker}
                                         onChange={(e) => updateAsset(idx, 'ticker', e.target.value)}
-                                        placeholder="CECZ"
-                                        className="w-24 bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white placeholder-slate-400 text-sm focus:outline-none focus:border-blue-400"
-                                    />
+                                        className="w-32 bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-400 [&>option]:bg-slate-800 [&>option]:text-white"
+                                    >
+                                        <option value="" disabled>Select Asset</option>
+                                        {availableSecurities.length > 0 ? (
+                                            availableSecurities.map(t => (
+                                                <option key={t} value={t}>{t}</option>
+                                            ))
+                                        ) : (
+                                            // Fallback if fetch fails or loading
+                                            <option value={asset.ticker}>{asset.ticker || 'Loading...'}</option>
+                                        )}
+                                    </select>
                                     <input
                                         type="text"
                                         value={asset.returns.join(', ')}

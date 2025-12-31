@@ -16,11 +16,14 @@ const mockData = [
     { name: '15:00', value: 400 },
 ];
 
-const TickerCard = ({ ticker, name, price, change, sector, history }: { ticker: string, name: string, price: number, change: number, sector: string, history: any[] }) => (
-    <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-4 shadow-xl hover:scale-105 transition-transform duration-300">
+const TickerCard = ({ ticker, name, price, change, sector, history, onClick }: { ticker: string, name: string, price: number, change: number, sector: string, history: any[], onClick: () => void }) => (
+    <div
+        onClick={onClick}
+        className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-4 shadow-xl hover:scale-105 transition-transform duration-300 cursor-pointer group"
+    >
         <div className="flex justify-between items-start mb-2">
             <div>
-                <h3 className="text-xl font-bold text-white">{ticker}</h3>
+                <h3 className="text-xl font-bold text-white group-hover:text-brand-primary transition-colors">{ticker}</h3>
                 <p className="text-xs text-brand-primary/80 truncate w-32">{name}</p>
                 <div className="mt-1">
                     <span className="text-[10px] uppercase tracking-wider bg-white/5 px-1.5 py-0.5 rounded text-slate-400">{sector}</span>
@@ -35,7 +38,7 @@ const TickerCard = ({ ticker, name, price, change, sector, history }: { ticker: 
             <span className="text-2xl font-bold text-white">K{price?.toFixed(2) || '---'}</span>
         </div>
 
-        <div className="h-16 mt-2 -mx-2">
+        <div className="h-16 mt-2 -mx-2 opacity-80 group-hover:opacity-100 transition-opacity">
             <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={history && history.length > 0 ? history : []}>
                     <Line type="monotone" dataKey="value" stroke={change >= 0 ? "#10b981" : "#f43f5e"} strokeWidth={2} dot={false} />
@@ -54,8 +57,11 @@ interface Security {
     history?: any[];
 }
 
+import { StockDetailModal } from './StockDetailModal';
+
 export const MarketPulse = () => {
     const [securities, setSecurities] = useState<Security[]>([]);
+    const [selectedStock, setSelectedStock] = useState<Security | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [downloading, setDownloading] = useState(false);
@@ -163,7 +169,11 @@ export const MarketPulse = () => {
                         <div className="col-span-4 text-center text-brand-secondary">No market data available. Ensure backend is running and seeded.</div>
                     ) : (
                         securities.map(s => (
-                            <TickerCard key={s.ticker} {...s as any} />
+                            <TickerCard
+                                key={s.ticker}
+                                {...s as any}
+                                onClick={() => setSelectedStock(s)}
+                            />
                         ))
                     )}
                 </div>
@@ -198,6 +208,12 @@ export const MarketPulse = () => {
                     </div>
                 </div>
             </section>
+
+            <StockDetailModal
+                isOpen={!!selectedStock}
+                onClose={() => setSelectedStock(null)}
+                stock={selectedStock as any}
+            />
         </div>
     );
 };
