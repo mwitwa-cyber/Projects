@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     
     # Redis
     REDIS_URL: str = "redis://redis:6379/0"
+    REDIS_CACHE_URL: str = "redis://redis:6379/1"
     
     # API
     API_V1_PREFIX: str = "/api/v1"

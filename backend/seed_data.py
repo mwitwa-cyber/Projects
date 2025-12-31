@@ -56,6 +56,31 @@ def seed():
             print(f"Skipping {t['ticker']} (already exists)")
             db.rollback()
 
+    # 1.1 Seed Bonds (Government)
+    bonds = [
+        {"ticker": "GRZ-2Y", "name": "GRZ 2 Year Bond", "coupon": 0.09, "maturity": date.today() + timedelta(days=365*2)},
+        {"ticker": "GRZ-3Y", "name": "GRZ 3 Year Bond", "coupon": 0.11, "maturity": date.today() + timedelta(days=365*3)},
+        {"ticker": "GRZ-5Y", "name": "GRZ 5 Year Bond", "coupon": 0.13, "maturity": date.today() + timedelta(days=365*5)},
+        {"ticker": "GRZ-10Y", "name": "GRZ 10 Year Bond", "coupon": 0.15, "maturity": date.today() + timedelta(days=365*10)},
+        {"ticker": "GRZ-15Y", "name": "GRZ 15 Year Bond", "coupon": 0.16, "maturity": date.today() + timedelta(days=365*15)},
+    ]
+    
+    print("Seeding Bonds...")
+    for b in bonds:
+        try:
+            service.create_ticker(
+                ticker=b["ticker"], 
+                name=b["name"], 
+                sector="Government Bonds",
+                security_type="Bond",
+                maturity_date=b["maturity"],
+                coupon_rate=b["coupon"]
+            )
+            print(f"Created {b['ticker']}")
+        except Exception as e:
+            print(f"Skipping {b['ticker']} ({str(e)})")
+            db.rollback()
+
     # 2. Seed Price History (Last 1 year)
     print("Seeding Price History...")
     start_date = date.today() - timedelta(days=365)
@@ -66,7 +91,10 @@ def seed():
         "CECZ": 3.50, "CHIL": 14.50, "DCZM": 1.00, "FQMZ": 18.00, "MAFS": 2.10,
         "NATB": 7.50, "PMDZ": 0.80, "PUMA": 1.90, "REIZ": 0.90, "SCBL": 2.10,
         "SHOP": 65.00, "ZABR": 6.80, "ZMBF": 1.50, "ZMFA": 4.20, "ZMRE": 5.00,
-        "ZNCO": 4.20, "ZSUG": 12.00, "ZCCM": 45.00, "ZFCO": 2.50
+        "ZNCO": 4.20, "ZSUG": 12.00, "ZCCM": 45.00, "ZFCO": 2.50,
+        # Bonds (Price per 100 face value)
+        "GRZ-2Y": 98.50, "GRZ-3Y": 95.00, "GRZ-5Y": 90.00, 
+        "GRZ-10Y": 85.00, "GRZ-15Y": 82.00
     }
     
     # Current simulation state
@@ -75,7 +103,8 @@ def seed():
     # Volatility & Liquidity profiles
     # Higher liquidity = changes more often
     liquidity_map = {
-        "High": ["CECZ", "ZNCO", "SCBL", "SHOP", "ZABR", "ZSUG", "ATEL", "FQMZ", "ZCCM"],
+        "High": ["CECZ", "ZNCO", "SCBL", "SHOP", "ZABR", "ZSUG", "ATEL", "FQMZ", "ZCCM", 
+                 "GRZ-2Y", "GRZ-3Y", "GRZ-5Y", "GRZ-10Y", "GRZ-15Y"], # Bonds are liquid
         "Medium": ["AECI", "CHIL", "PUMA", "ZMBF", "BATZ", "ZMRE", "ZFCO"],
         "Low": ["BATA", "CCAF", "DCZM", "MAFS", "NATB", "PMDZ", "REIZ", "ZMFA"]
     }
@@ -85,11 +114,12 @@ def seed():
         if ticker in liquidity_map["Medium"]: return 0.4
         return 0.1
 
+    all_tickers = [t["ticker"] for t in tickers] + [b["ticker"] for b in bonds]
+    
     import random
     current_date = start_date
     while current_date <= date.today():
-        for t in tickers:
-            ticker = t["ticker"]
+        for ticker in all_tickers:
             prob = get_liquidity(ticker)
             
             if random.random() < prob:

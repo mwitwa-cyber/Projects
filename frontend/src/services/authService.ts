@@ -3,10 +3,11 @@ import axios from 'axios';
 const API_URL = 'http://localhost:8000/api/v1/auth';
 
 export const authService = {
-  async login(username: string, password: string) {
+  async login(username: string, password: string, totp_code?: string) {
     const response = await axios.post(`${API_URL}/login`, {
       username,
-      password
+      password,
+      totp_code
     });
     if (response.data.access_token) {
       localStorage.setItem('user', JSON.stringify(response.data));
@@ -42,5 +43,29 @@ export const authService = {
       return user?.access_token;
     }
     return null;
+  },
+
+  async setupTOTP() {
+    const token = this.getToken();
+    const response = await axios.post(`${API_URL}/totp/setup`, {}, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+  },
+
+  async verifyTOTP(code: string) {
+    const token = this.getToken();
+    const response = await axios.post(`${API_URL}/totp/verify`, { code }, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+  },
+
+  async disableTOTP(code: string) {
+    const token = this.getToken();
+    const response = await axios.post(`${API_URL}/totp/disable`, { code }, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
   }
 };

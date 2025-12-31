@@ -8,11 +8,16 @@ The **LuSE Quantitative Investment Analysis Platform** is a sophisticated fintec
 
 *   **Market Data**: Real-time and historical price ingestion with bitemporal support (Valid Time vs. Transaction Time).
 *   **Analytics Engine**:
-    *   **CM1**: Bond Pricing & Yield Curve construction.
+    *   **CM1**: Bond Pricing & Yield Curve construction (Nelson-Siegel).
     *   **CM2**: Portfolio Optimization using Mean-Variance analysis.
     *   **Risk**: Monte Carlo simulations and Value at Risk (VaR).
+    *   **Backtesting**: Historical strategy simulation with equity curves.
 *   **Fintech UI**: Modern, responsive dark-mode dashboard built with React & Tailwind CSS.
-*   **Security**: JWT-based authentication with role-based access control (RBAC).
+    *   **Visualization**: Interactive OHLC charts and Yield Curve plots.
+    *   **Reporting**: Exportable PDF Market Summaries.
+*   **Security**: 
+    *   JWT-based authentication with role-based access control (RBAC).
+    *   **Two-Factor Authentication (2FA)**: TOTP support (Google Authenticator).
 
 ## 🛠️ Tech Stack
 

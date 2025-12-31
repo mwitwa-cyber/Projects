@@ -1,5 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Dashboard } from './components/Dashboard';
+import { AnalyticsDashboard } from './pages/AnalyticsDashboard';
+import { BacktestStrategy } from './pages/BacktestStrategy';
 import { Login } from './components/Auth/Login';
 import { Register } from './components/Auth/Register';
 import { authService } from './services/authService';
@@ -23,6 +25,22 @@ function App() {
           element={
             <ProtectedRoute>
               <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/analytics"
+          element={
+            <ProtectedRoute>
+              <AnalyticsDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/backtest"
+          element={
+            <ProtectedRoute>
+              <BacktestStrategy />
             </ProtectedRoute>
           }
         />

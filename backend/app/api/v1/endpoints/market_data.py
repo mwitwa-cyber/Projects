@@ -6,6 +6,7 @@ from datetime import date
 from app.core.db import get_db
 from app.services.market_data import MarketDataService
 from pydantic import BaseModel
+from fastapi_cache.decorator import cache
 
 router = APIRouter()
 
@@ -28,6 +29,7 @@ class SecurityResponse(BaseModel):
     sector: str
 
 @router.get("/market-summary", response_model=List[MarketSummaryItem])
+@cache(expire=60)
 def get_market_summary(
     date_str: Optional[str] = Query(None, alias="date"),
     db: Session = Depends(get_db)
@@ -48,6 +50,7 @@ def get_market_summary(
     return summary
 
 @router.get("/securities", response_model=List[SecurityResponse])
+@cache(expire=300)
 def get_securities(db: Session = Depends(get_db)):
     """Get list of all securities."""
     # Quick ad-hoc query since service doesn't have a direct method for just this, 
@@ -57,6 +60,23 @@ def get_securities(db: Session = Depends(get_db)):
     from app.core.models import Security
     securities = db.query(Security).all()
     return [{"ticker": s.ticker, "name": s.name, "sector": s.sector} for s in securities]
+
+@router.get("/ohlc/{ticker}")
+@cache(expire=60)
+def get_ohlc_data(
+    ticker: str,
+    days: int = 1,
+    db: Session = Depends(get_db)
+):
+    """
+    Get OHLC candles for a ticker.
+    Default: Last 24 hours (1 day).
+    """
+    from datetime import datetime, timedelta
+    service = MarketDataService(db)
+    start_date = datetime.now() - timedelta(days=days)
+    data = service.get_ohlc_data(ticker, start_date)
+    return data
 
 @router.get("/luse/latest")
 def get_luse_latest():

@@ -7,8 +7,18 @@ class MarketDataService:
     def __init__(self, db: Session):
         self.db = db
 
-    def create_ticker(self, ticker: str, name: str, sector: str):
-        sec = Security(ticker=ticker, name=name, sector=sector)
+    def create_ticker(self, ticker: str, name: str, sector: str, 
+                      security_type: str = "Equity", 
+                      maturity_date: datetime = None, 
+                      coupon_rate: float = None):
+        sec = Security(
+            ticker=ticker, 
+            name=name, 
+            sector=sector,
+            type=security_type,
+            maturity_date=maturity_date,
+            coupon_rate=coupon_rate
+        )
         self.db.add(sec)
         self.db.commit()
         return sec
@@ -118,3 +128,32 @@ class MarketDataService:
             })
             
         return summary
+
+    def get_ohlc_data(self, ticker: str, start_date: datetime) -> list[dict]:
+        """
+        Queries the continuous aggregate view `ohlc_1min` for OHLC data.
+        """
+        from sqlalchemy import text
+        
+        query = text("""
+            SELECT bucket, open, high, low, close, volume
+            FROM ohlc_1min
+            WHERE security_ticker = :ticker
+            AND bucket >= :start_date
+            ORDER BY bucket ASC
+        """)
+        
+        result = self.db.execute(query, {"ticker": ticker, "start_date": start_date})
+        
+        data = []
+        for row in result:
+            data.append({
+                "time": row.bucket.isoformat(), # TradingView lightweight charts prefer ISO or unix
+                "open": row.open,
+                "high": row.high,
+                "low": row.low,
+                "close": row.close,
+                "volume": row.volume
+            })
+            
+        return data

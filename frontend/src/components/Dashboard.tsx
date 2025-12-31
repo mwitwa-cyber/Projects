@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react';
-import { Activity, Zap, BarChart3, AlertCircle, Loader2 } from 'lucide-react';
+import { Activity, Zap, BarChart3, AlertCircle, Loader2, Shield } from 'lucide-react';
 import { MarketPulse } from './MarketPulse';
 import { BondPricer } from './BondPricer';
 import { PortfolioOptimizer } from './PortfolioOptimizer';
 import { RiskAnalyzer } from './RiskAnalyzer';
+import { TOTPSetup } from './Auth/TOTPSetup';
 import { healthCheck } from '../services/api';
 import { authService } from '../services/authService';
 import { useNavigate } from 'react-router-dom';
 
-type TabType = 'market' | 'bond' | 'portfolio' | 'risk';
+type TabType = 'market' | 'bond' | 'portfolio' | 'risk' | 'profile';
 
 export function Dashboard() {
     const [activeTab, setActiveTab] = useState<TabType>('market');
@@ -42,6 +43,7 @@ export function Dashboard() {
         { id: 'bond' as const, label: 'Bond Pricing', icon: Zap },
         { id: 'portfolio' as const, label: 'Portfolio', icon: BarChart3 },
         { id: 'risk' as const, label: 'Risk Analysis', icon: AlertCircle },
+        { id: 'profile' as const, label: 'Security', icon: Shield },
     ];
 
     if (backendStatus === 'checking') {
@@ -123,6 +125,7 @@ export function Dashboard() {
                     {activeTab === 'bond' && <BondPricer />}
                     {activeTab === 'portfolio' && <PortfolioOptimizer />}
                     {activeTab === 'risk' && <RiskAnalyzer />}
+                    {activeTab === 'profile' && <TOTPSetup />}
                 </div>
             </main>
 

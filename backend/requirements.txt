@@ -11,6 +11,7 @@ scipy
 # PyPortfolioOpt
 # celery
 celery
+fastapi-cache2[redis]
 redis
 python-dotenv
 alembic
@@ -32,3 +33,7 @@ httpx==0.25.2
 python-jose
 passlib[bcrypt]
 python-multipart
+pyotp==2.9.0
+qrcode==7.4.2
+pillow
+reportlab==4.0.8

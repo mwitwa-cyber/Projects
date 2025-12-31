@@ -10,16 +10,27 @@ export const Login = () => {
     const [error, setError] = useState('');
     const navigate = useNavigate();
 
+    const [totpCode, setTotpCode] = useState('');
+    const [showTotp, setShowTotp] = useState(false);
+
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
         setError('');
         try {
-            await authService.login(username, password);
-            // Force reload or state update to reflect auth status in App
+            await authService.login(username, password, totpCode);
             window.location.href = '/';
-        } catch (err) {
-            setError('Login failed. Check your credentials.');
+        } catch (err: any) {
+            // Check for TOTP requirement
+            if (err.response?.status === 401 && (
+                err.response?.data?.detail === "TOTP code required" ||
+                err.response?.headers['x-totp-required'] === "true"
+            )) {
+                setShowTotp(true);
+                setError('Please enter your 2FA code.');
+            } else {
+                setError(err.response?.data?.detail || 'Login failed.');
+            }
             console.error(err);
         } finally {
             setLoading(false);
@@ -54,6 +65,20 @@ export const Login = () => {
                             placeholder="Enter username"
                             required
                         />
+                        {showTotp && (
+                            <div className="animate-fade-in">
+                                <label className="block text-fintech-text-secondary text-sm font-medium mb-1.5">2FA Code</label>
+                                <input
+                                    type="text"
+                                    value={totpCode}
+                                    onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, ''))}
+                                    className="w-full bg-fintech-bg border border-fintech-border rounded-lg px-4 py-2.5 text-fintech-text-primary focus:outline-none focus:border-fintech-primary focus:ring-1 focus:ring-fintech-primary transition-colors tracking-widest text-center font-mono"
+                                    placeholder="000 000"
+                                    maxLength={6}
+                                    autoFocus
+                                />
+                            </div>
+                        )}
                     </div>
                     <div>
                         <label className="block text-fintech-text-secondary text-sm font-medium mb-1.5">Password</label>

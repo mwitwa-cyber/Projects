@@ -11,6 +11,12 @@ class Security(Base):
     name = Column(String)
     sector = Column(String)
     currency = Column(String, default="ZMW")
+    
+    # Bond Fields
+    type = Column(String, default="Equity") # Equity, Bond
+    maturity_date = Column(DateTime, nullable=True)
+    coupon_rate = Column(Float, nullable=True)
+    face_value = Column(Float, default=100.0)
 
 class MarketPrice(Base):
     """

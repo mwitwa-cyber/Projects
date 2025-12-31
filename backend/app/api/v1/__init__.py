@@ -1,7 +1,7 @@
 """API v1 routes."""
 
 from fastapi import APIRouter
-from app.api.v1.endpoints import valuation, optimization, bitemporal, portfolio, market_data, auth, monitoring
+from app.api.v1.endpoints import valuation, optimization, bitemporal, portfolio, market_data, auth, monitoring, analytics, backtest, reports
 
 api_router = APIRouter()
 
@@ -12,5 +12,8 @@ api_router.include_router(portfolio.router, prefix="/portfolios", tags=["portfol
 api_router.include_router(market_data.router, prefix="/market-data", tags=["market-data"])
 api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
 api_router.include_router(monitoring.router, tags=["monitoring"])
+api_router.include_router(analytics.router, prefix="/analytics", tags=["analytics"])
+api_router.include_router(backtest.router, prefix="/backtest", tags=["backtest"])
+api_router.include_router(reports.router, prefix="/reports", tags=["reports"])
 
 print(f"DEBUG: API Router Routes: {[r.path for r in api_router.routes if 'health' in r.path]}")

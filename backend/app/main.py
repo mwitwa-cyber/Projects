@@ -80,6 +80,14 @@ async def health_check():
 
 @app.on_event("startup")
 async def startup_tasks():
+    # Initialize Redis Cache
+    from fastapi_cache import FastAPICache
+    from fastapi_cache.backends.redis import RedisBackend
+    from redis import asyncio as aioredis
+    
+    redis = aioredis.from_url(settings.REDIS_CACHE_URL, encoding="utf8", decode_responses=True)
+    FastAPICache.init(RedisBackend(redis), prefix="fastapi-cache")
+
     # If ENABLE_SCRAPER is set (True/1/yes), start background scraper
     if os.getenv("ENABLE_SCRAPER", "false").lower() in ("1", "true", "yes") and run_background_scraper:
         provider = os.getenv("SCRAPER_PROVIDER")

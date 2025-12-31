@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Activity, DollarSign, Loader2 } from 'lucide-react';
+import { Activity, DollarSign, Loader2, Download } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { cn } from '../lib/utils';
 
@@ -57,50 +57,76 @@ interface Security {
 export const MarketPulse = () => {
     const [securities, setSecurities] = useState<Security[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+    const [downloading, setDownloading] = useState(false);
+
+    const handleDownloadReport = async () => {
+        try {
+            setDownloading(true);
+            const token = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!).access_token : null;
+            const response = await fetch('http://localhost:8000/api/v1/reports/market-summary', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) throw new Error('Download failed');
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `LuSE_Market_Report_${new Date().toISOString().split('T')[0]}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setDownloading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchData = async () => {
+        const loadMarketData = async () => {
             try {
                 // Fetch market summary directly
                 const today = new Date().toISOString().split('T')[0];
-                // In a real app, you might want to fetch 'latest' available business day if today has no data yet.
-                // For now, we assume the seed script populated 'today' or close to it.
-                // Since the seed script uses 'today - 30 days' loop, ensuring we have data for 'today' might require running the seed script TODAY.
-
-                // Let's assume we want to view data for the "current" simulation date.
-                // If the seed script runs up to today, then we use today.
-
-                // IMPORTANT: The backend 'get_market_summary' takes a date.
-                // We use the same 'getSecurities' / 'getPrice' style helper but we need a new one for summary or just use fetch here.
                 const response = await fetch(`http://localhost:8000/api/v1/market-data/market-summary?date=${today}`);
                 if (!response.ok) {
                     throw new Error("Failed to fetch market summary");
                 }
                 const data = await response.json();
 
-                // Map backend data to frontend model
-                // Backend returns: { ticker, name, sector, price, change, change_percent }
-                // Frontend expects: { ticker, name, sector, price, change } where change is used as %.
                 const mapped = data.map((item: any) => ({
                     ...item,
-                    change: item.change_percent // Use percentage for the display
+                    change: item.change_percent
                 }));
 
                 setSecurities(mapped);
             } catch (err) {
                 console.error("Failed to fetch securities", err);
+                setError('Failed to fetch market data');
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchData();
+        loadMarketData();
     }, []);
 
     if (loading) {
         return (
             <div className="min-h-screen bg-brand-dark flex items-center justify-center text-white">
                 <Loader2 className="w-10 h-10 animate-spin text-brand-primary" />
+            </div>
+        )
+    }
+
+    if (error) {
+        return (
+            <div className="min-h-screen bg-brand-dark flex items-center justify-center text-white">
+                <p className="text-red-400">{error}</p>
             </div>
         )
     }
@@ -113,6 +139,14 @@ export const MarketPulse = () => {
                     <p className="text-brand-secondary mt-1">Real-time Bitemporal Data Stream</p>
                 </div>
                 <div className="flex gap-4">
+                    <button
+                        onClick={handleDownloadReport}
+                        disabled={downloading}
+                        className="flex items-center gap-2 px-3 py-2 bg-brand-primary/10 hover:bg-brand-primary/20 text-brand-primary rounded-lg text-sm transition-colors border border-brand-primary/20"
+                    >
+                        {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                        Export PDF
+                    </button>
                     <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-lg border border-white/10">
                         <Activity className="w-4 h-4 text-brand-primary" />
                         <span className="text-sm font-mono">LASI: 6,420.21 (+0.4%)</span>
