@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import type { FormEvent } from 'react';
 import { Loader2, AlertCircle, PieChart as PieChartIcon, Trash2 } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, ScatterChart, Scatter, CartesianGrid, XAxis, YAxis } from 'recharts';
-import { optimizationAPI } from '../services/api';
+import api, { optimizationAPI } from '../services/api';
 
 // Asset type definition
 interface Asset {
@@ -12,16 +12,18 @@ interface Asset {
 
 // Optimization API result type
 interface OptimizationResult {
-    optimal_weights: Record<string, number>;
+    weights: Record<string, number>;
     expected_return: number;
-    portfolio_volatility: number;
+    volatility: number;
     sharpe_ratio: number;
+    objective: string;
 }
 
 // Efficient frontier API result type
 interface FrontierResult {
-    frontierPoints: Array<{ volatility: number; return: number }>;
-    optimalPoint: { volatility: number; return: number };
+    frontier: Array<{ volatility: number; return: number }>;
+    n_points: number;
+    assets: string[];
 }
 
 const COLORS = ['#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
@@ -36,7 +38,7 @@ export const PortfolioOptimizer = () => {
         { ticker: 'SCBL', returns: [0.015, 0.025, 0.005, 0.03, 0.02, 0.01, 0.03, 0.025] },
     ]);
     const [riskFreeRate, setRiskFreeRate] = useState<number>(0.20);
-    const [objective, setObjective] = useState<'max_sharpe' | 'min_variance' | 'equal_weight'>('max_sharpe');
+    const [objective, setObjective] = useState<'max_sharpe' | 'min_vol' | 'equal_weight'>('max_sharpe');
     const [result, setResult] = useState<OptimizationResult | null>(null);
     const [frontierData, setFrontierData] = useState<FrontierResult | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
@@ -48,11 +50,8 @@ export const PortfolioOptimizer = () => {
     useEffect(() => {
         const fetchSecurities = async () => {
             try {
-                const response = await fetch('http://localhost:8000/api/v1/market-data/securities');
-                if (response.ok) {
-                    const data = await response.json();
-                    setAvailableSecurities(data.map((s: any) => s.ticker));
-                }
+                const response = await api.get('/market-data/securities');
+                setAvailableSecurities(response.data.map((s: any) => s.ticker));
             } catch (err) {
                 console.error("Failed to fetch securities", err);
             }
@@ -127,7 +126,7 @@ export const PortfolioOptimizer = () => {
 
     const getWeightPieData = () => {
         if (!result) return [];
-        return Object.entries(result.optimal_weights)
+        return Object.entries(result.weights)
             .filter(([_, weight]) => weight > 0.001)
             .map(([ticker, weight]) => ({
                 name: ticker,
@@ -137,7 +136,7 @@ export const PortfolioOptimizer = () => {
 
     const getFrontierChartData = () => {
         if (!frontierData) return [];
-        return frontierData.frontierPoints.map(point => ({
+        return frontierData.frontier.map(point => ({
             volatility: Number((point.volatility * 100).toFixed(2)),
             return: Number((point.return * 100).toFixed(2)),
         }));
@@ -156,7 +155,7 @@ export const PortfolioOptimizer = () => {
                             Optimization Objective
                         </label>
                         <div className="flex gap-4">
-                            {(['max_sharpe', 'min_variance', 'equal_weight'] as const).map(opt => (
+                            {(['max_sharpe', 'min_vol', 'equal_weight'] as const).map(opt => (
                                 <label key={opt} className="flex items-center gap-2 cursor-pointer">
                                     <input
                                         type="radio"
@@ -168,7 +167,7 @@ export const PortfolioOptimizer = () => {
                                     />
                                     <span className="text-sm text-slate-300">
                                         {opt === 'max_sharpe' && 'Maximize Sharpe Ratio'}
-                                        {opt === 'min_variance' && 'Minimize Variance'}
+                                        {opt === 'min_vol' && 'Minimize Volatility'}
                                         {opt === 'equal_weight' && 'Equal Weight'}
                                     </span>
                                 </label>
@@ -280,7 +279,7 @@ export const PortfolioOptimizer = () => {
                         <div className="bg-white/5 border border-white/10 rounded-xl p-4">
                             <div className="text-sm text-slate-400 mb-1">Portfolio Volatility</div>
                             <div className="text-2xl font-bold text-orange-400">
-                                {(result.portfolio_volatility * 100).toFixed(2)}%
+                                {(result.volatility * 100).toFixed(2)}%
                             </div>
                         </div>
                         <div className="bg-white/5 border border-white/10 rounded-xl p-4">

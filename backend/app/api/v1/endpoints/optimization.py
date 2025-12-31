@@ -43,6 +43,7 @@ async def optimize_portfolio(request: OptimizationRequest):
     Objectives:
     - max_sharpe: Maximize Sharpe ratio (Tangency Portfolio)
     - min_vol: Minimize volatility
+    - equal_weight: Equal weight allocation
     """
     try:
         # Convert to DataFrame
@@ -50,6 +51,28 @@ async def optimize_portfolio(request: OptimizationRequest):
         
         if returns_df.empty or len(returns_df) < 2:
             raise ValueError("Insufficient return data provided")
+        
+        # Handle equal weight separately (no optimization needed)
+        if request.objective == "equal_weight":
+            n_assets = len(returns_df.columns)
+            equal_weights = {col: 1.0 / n_assets for col in returns_df.columns}
+            
+            # Calculate metrics for equal weight portfolio
+            mean_returns = returns_df.mean()
+            cov_matrix = returns_df.cov()
+            weights_array = np.array([equal_weights[col] for col in returns_df.columns])
+            
+            port_return = np.dot(weights_array, mean_returns)
+            port_vol = np.sqrt(np.dot(weights_array.T, np.dot(cov_matrix, weights_array)))
+            sharpe = (port_return - request.risk_free_rate) / port_vol if port_vol > 0 else 0
+            
+            return PortfolioWeightsResponse(
+                weights={k: round(v, 4) for k, v in equal_weights.items()},
+                expected_return=round(float(port_return), 6),
+                volatility=round(float(port_vol), 6),
+                sharpe_ratio=round(float(sharpe), 4),
+                objective=request.objective
+            )
         
         # Initialize optimizer
         optimizer = PortfolioOptimizer(

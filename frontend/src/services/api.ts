@@ -90,9 +90,9 @@ export const optimizationAPI = {
     // Portfolio optimization
     optimize: async (payload: {
         returns_data: Record<string, number[]>;
-        objective: 'max_sharpe' | 'min_variance' | 'equal_weight';
+        objective: 'max_sharpe' | 'min_vol' | 'equal_weight';
         risk_free_rate: number;
-        constraints?: Record<string, any>;
+        target_return?: number;
     }) => {
         const response = await api.post('/optimization/optimize', payload);
         return response.data;
@@ -101,7 +101,7 @@ export const optimizationAPI = {
     // Efficient frontier
     efficientFrontier: async (payload: {
         returns_data: Record<string, number[]>;
-        num_points?: number;
+        n_points?: number;
         risk_free_rate?: number;
     }) => {
         const response = await api.post('/optimization/efficient-frontier', payload);
