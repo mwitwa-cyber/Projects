@@ -15,5 +15,3 @@ api_router.include_router(monitoring.router, tags=["monitoring"])
 api_router.include_router(analytics.router, prefix="/analytics", tags=["analytics"])
 api_router.include_router(backtest.router, prefix="/backtest", tags=["backtest"])
 api_router.include_router(reports.router, prefix="/reports", tags=["reports"])
-
-print(f"DEBUG: API Router Routes: {[r.path for r in api_router.routes if 'health' in r.path]}")

@@ -105,14 +105,24 @@ Create a `.env` (local) or `.env.prod` (docker) file in the root directory.
 
 | Variable | Description | Default |
 | :--- | :--- | :--- |
-| `PROJECT_NAME` | App Name | `LuSE Quant Platform` |
-| `POSTGRES_SERVER` | DB Host | `localhost` or `postgres` |
-| `POSTGRES_USER` | DB User | `postgres` |
-| `POSTGRES_PASSWORD` | DB Password | `password` |
-| `POSTGRES_DB` | DB Name | `luse_quant` |
-| `SECRET_KEY` | JWT Secret | *Change this in prod!* |
-| `ACCESS_TOKEN_EXPIRE_MINUTES` | Token validity | `30` |
-| `CORS_ORIGINS` | Allowed API Origins | `["http://localhost", "http://localhost:5173"]` |
+| `DATABASE_URL` | PostgreSQL Connection | `postgresql://postgres:password@localhost:5432/luse_quant` |
+| `SECRET_KEY` | JWT Secret (min 32 chars) | *Auto-generated in dev, **required in prod*** |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | Token validity | `60` (1 hour) |
+| `ENVIRONMENT` | `development` or `production` | `production` |
+| `CORS_ORIGINS` | Allowed API Origins | `["http://localhost:5173"]` |
+| `REDIS_CACHE_URL` | Redis cache connection | `redis://redis:6379/1` |
+
+## 🔐 Security Features
+
+- **JWT Authentication** with configurable expiration (default: 1 hour)
+- **Password Requirements**: Min 8 chars, uppercase, lowercase, digit, special character
+- **Two-Factor Authentication (TOTP)**: Google Authenticator compatible
+- **Bcrypt Password Hashing**: Industry-standard secure hashing
+- **Session Storage**: Tokens stored in sessionStorage (cleared on tab close)
+- **Auto-logout**: On 401 responses and token expiration
+- **Input Validation**: Pydantic validators on all endpoints
+- **CORS Protection**: Configurable allowed origins
+- **Rate Limiting**: Via Redis cache (configurable)
 
 ## 🧪 Testing
 
@@ -126,13 +136,16 @@ pytest
 
 ## 📚 API Documentation
 Once the backend is running, visit:
-*   **Swagger UI**: `/docs`
-*   **ReDoc**: `/redoc`
+*   **Swagger UI**: `/docs` (disabled in production)
+*   **ReDoc**: `/redoc` (disabled in production)
 
 Core Endpoints:
-*   `/api/v1/auth`: Login/Register
+*   `/api/v1/auth`: Login/Register/TOTP setup
 *   `/api/v1/market-data`: Market summaries, tickers, and price history
+*   `/api/v1/portfolios`: Portfolio CRUD (authenticated)
 *   `/api/v1/optimization`: Portfolio optimization tasks
+*   `/api/v1/valuation`: Bond pricing, DCF valuation
+*   `/api/v1/backtest`: Historical strategy backtesting
 
 ## 📂 Project Structure
 

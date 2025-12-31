@@ -1,8 +1,42 @@
 import axios from 'axios';
+import { authService } from './authService';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 const api = axios.create({
-    baseURL: 'http://localhost:8000/api/v1',
+    baseURL: `${API_BASE_URL}/api/v1`,
+    timeout: 30000, // 30 second timeout
 });
+
+// Request interceptor to add auth token
+api.interceptors.request.use(
+    (config) => {
+        const token = authService.getToken();
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
+    }
+);
+
+// Response interceptor to handle auth errors
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response?.status === 401) {
+            // Token expired or invalid - logout user
+            const currentPath = window.location.pathname;
+            if (currentPath !== '/login' && currentPath !== '/register') {
+                authService.logout();
+                window.location.href = '/login';
+            }
+        }
+        return Promise.reject(error);
+    }
+);
 
 // ============ VALUATION ENDPOINTS ============
 export const valuationAPI = {
@@ -110,7 +144,7 @@ export const riskAPI = {
 // ============ HEALTH CHECK ============
 export const healthCheck = async () => {
     try {
-        const response = await axios.get('http://localhost:8000/');
+        const response = await axios.get(`${API_BASE_URL}/`);
         return response.data;
     } catch (error) {
         throw new Error('Backend is not responding');

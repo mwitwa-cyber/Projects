@@ -58,7 +58,7 @@ async def run_backtest(
         
         # Forward fill missing data (e.g. non-trading days differences)
         df.index = pd.to_datetime(df.index)
-        df = df.sort_index().fillna(method='ffill').dropna()
+        df = df.sort_index().ffill().dropna()
         
         if df.empty:
             raise ValueError("Insufficient overlapping price data for these assets.")

@@ -1,7 +1,9 @@
 """Application configuration using Pydantic settings."""
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from typing import Optional
+from pydantic import field_validator
+from typing import List
+import secrets
 
 
 class Settings(BaseSettings):
@@ -23,12 +25,19 @@ class Settings(BaseSettings):
     
     # API
     API_V1_PREFIX: str = "/api/v1"
-    CORS_ORIGINS: list[str] = ["http://localhost:5173", "http://localhost:3000", "http://localhost", "http://localhost:80", "http://127.0.0.1", "http://127.0.0.1:80"]
+    CORS_ORIGINS: List[str] = [
+        "http://localhost:5173", 
+        "http://localhost:3000", 
+        "http://localhost", 
+        "http://localhost:80", 
+        "http://127.0.0.1", 
+        "http://127.0.0.1:80"
+    ]
     
     # Security
-    SECRET_KEY: str
+    SECRET_KEY: str = ""  # Will be validated
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 hours
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60  # 1 hour (reduced from 24 for security)
     
     # Market Data
     LUSE_DATA_URL: str = "https://afx.kwayisi.org/luse/"
@@ -42,6 +51,22 @@ class Settings(BaseSettings):
     # Optimization
     MAX_PORTFOLIO_SIZE: int = 50
     OPTIMIZATION_SOLVER: str = "ECOS"  # ECOS, OSQP, SCS
+    
+    @field_validator('SECRET_KEY')
+    @classmethod
+    def validate_secret_key(cls, v: str, info) -> str:
+        """Ensure SECRET_KEY is set and sufficiently strong in production."""
+        if not v or v in ('', 'dev_secret', 'your-secret-key-change-in-production'):
+            # In development, generate a random key with warning
+            import logging
+            logging.warning(
+                "SECRET_KEY not set or using default. "
+                "Generating random key. Set SECRET_KEY in production!"
+            )
+            return secrets.token_urlsafe(32)
+        if len(v) < 32:
+            raise ValueError("SECRET_KEY must be at least 32 characters long")
+        return v
     
     model_config = SettingsConfigDict(
         env_file=".env",

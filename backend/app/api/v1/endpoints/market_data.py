@@ -65,7 +65,7 @@ def get_securities(db: Session = Depends(get_db)):
 @cache(expire=60)
 def get_ohlc_data(
     ticker: str,
-    days: int = 1,
+    days: int = Query(default=1, ge=1, le=365, description="Number of days (1-365)"),
     db: Session = Depends(get_db)
 ):
     """
@@ -73,9 +73,16 @@ def get_ohlc_data(
     Default: Last 24 hours (1 day).
     """
     from datetime import datetime, timedelta
+    import re
+    
+    # Validate ticker format (alphanumeric only, max 10 chars)
+    if not re.match(r'^[A-Za-z0-9]{1,10}$', ticker):
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail="Invalid ticker format")
+    
     service = MarketDataService(db)
     start_date = datetime.now() - timedelta(days=days)
-    data = service.get_ohlc_data(ticker, start_date)
+    data = service.get_ohlc_data(ticker.upper(), start_date)
     return data
 
 @router.get("/luse/latest")

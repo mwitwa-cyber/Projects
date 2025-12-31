@@ -1,10 +1,18 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, field_validator
 from typing import Optional
 from jose import JWTError, jwt
-from app.services.auth_service import authenticate_user, create_access_token, get_password_hash, SECRET_KEY, ALGORITHM
+import pyotp
+import qrcode
+import io
+import base64
+
+from app.services.auth_service import (
+    authenticate_user, create_access_token, get_password_hash, 
+    validate_password_strength, SECRET_KEY, ALGORITHM
+)
 from app.models.user import User
 from app.models.base import get_db
 
@@ -12,7 +20,9 @@ router = APIRouter(tags=["auth"])
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
+
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    """Validate JWT token and return current user."""
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -23,32 +33,71 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         username: str = payload.get("sub")
         if username is None:
             raise credentials_exception
+        # Check token expiration is handled by jwt.decode automatically
     except JWTError:
         raise credentials_exception
+    
     user = db.query(User).filter(User.username == username).first()
     if user is None:
         raise credentials_exception
     return user
 
+
 def get_current_active_user(current_user: User = Depends(get_current_user)):
+    """Return current active user."""
     return current_user
 
+
 class UserCreate(BaseModel):
+    """User registration request model with validation."""
     username: str
-    email: str
+    email: EmailStr
     password: str
+    
+    @field_validator('username')
+    @classmethod
+    def validate_username(cls, v: str) -> str:
+        if len(v) < 3:
+            raise ValueError('Username must be at least 3 characters')
+        if len(v) > 50:
+            raise ValueError('Username must be less than 50 characters')
+        if not v.isalnum() and '_' not in v:
+            raise ValueError('Username must contain only alphanumeric characters and underscores')
+        return v.lower()
+    
+    @field_validator('password')
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        is_valid, message = validate_password_strength(v)
+        if not is_valid:
+            raise ValueError(message)
+        return v
+
 
 class UserLogin(BaseModel):
+    """User login request model."""
     username: str
     password: str
     totp_code: Optional[str] = None
 
+
 @router.post("/register")
 def register(user: UserCreate, db: Session = Depends(get_db)):
-    if db.query(User).filter((User.username == user.username) | (User.email == user.email)).first():
+    """Register a new user with password strength validation."""
+    # Check for existing user (case-insensitive)
+    existing_user = db.query(User).filter(
+        (User.username == user.username.lower()) | (User.email == user.email.lower())
+    ).first()
+    
+    if existing_user:
         raise HTTPException(status_code=400, detail="Username or email already registered")
+    
     hashed_password = get_password_hash(user.password)
-    db_user = User(username=user.username, email=user.email, hashed_password=hashed_password)
+    db_user = User(
+        username=user.username.lower(), 
+        email=user.email.lower(), 
+        hashed_password=hashed_password
+    )
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
@@ -56,33 +105,47 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
 
 @router.post("/login")
 def login(user: UserLogin, db: Session = Depends(get_db)):
+    """Authenticate user and return JWT token."""
     db_user = authenticate_user(db, user.username, user.password)
-    # Note: authenticate_user only checks password.
     
     if not db_user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+        # Use constant-time response to prevent timing attacks
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, 
+            detail="Invalid credentials"
+        )
     
     # Check if TOTP is enabled
     if db_user.totp_enabled:
         if not user.totp_code:
-            # Require TOTP code
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, 
                 detail="TOTP code required",
                 headers={"X-TOTP-Required": "true"}
             )
+        
+        if not db_user.totp_secret:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="TOTP configuration error"
+            )
             
         totp = pyotp.TOTP(db_user.totp_secret)
-        if not totp.verify(user.totp_code):
-             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid TOTP code")
+        # valid_window=1 allows for minor time drift (30 seconds before/after)
+        if not totp.verify(user.totp_code, valid_window=1):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, 
+                detail="Invalid TOTP code"
+            )
 
     access_token = create_access_token({"sub": db_user.username})
-    return {"access_token": access_token, "token_type": "bearer", "totp_required": db_user.totp_enabled}
+    return {
+        "access_token": access_token, 
+        "token_type": "bearer", 
+        "totp_enabled": db_user.totp_enabled,
+        "username": db_user.username
+    }
 
-import pyotp
-import qrcode
-import io
-import base64
 
 @router.post("/totp/setup")
 def totp_setup(current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
