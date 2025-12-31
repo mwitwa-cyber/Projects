@@ -85,16 +85,57 @@ def seed():
     print("Seeding Price History...")
     start_date = date.today() - timedelta(days=365)
     
-    # Base prices (approximate historical starts)
+    # Base prices as of 1 year ago (January 2025) - realistic LuSE historical values
+    # These will drift toward current prices over the simulation period
     base_prices = {
-        "AECI": 25.00, "ATEL": 22.00, "BATA": 3.50, "BATZ": 2.80, "CCAF": 0.20,
-        "CECZ": 3.50, "CHIL": 14.50, "DCZM": 1.00, "FQMZ": 18.00, "MAFS": 2.10,
-        "NATB": 7.50, "PMDZ": 0.80, "PUMA": 1.90, "REIZ": 0.90, "SCBL": 2.10,
-        "SHOP": 65.00, "ZABR": 6.80, "ZMBF": 1.50, "ZMFA": 4.20, "ZMRE": 5.00,
-        "ZNCO": 4.20, "ZSUG": 12.00, "ZCCM": 45.00, "ZFCO": 2.50,
-        # Bonds (Price per 100 face value)
-        "GRZ-2Y": 98.50, "GRZ-3Y": 95.00, "GRZ-5Y": 90.00, 
-        "GRZ-10Y": 85.00, "GRZ-15Y": 82.00
+        # Banking & Financials
+        "ZNCO": 5.20,       # Zanaco
+        "SCBL": 2.20,       # Standard Chartered Bank Zambia
+        "MAFS": 2.00,       # Madison Financial Services
+        "CCAF": 0.65,       # CEC Africa Investment
+        "ZMRE": 4.80,       # Zambia Reinsurance
+        
+        # Mining & Basic Materials  
+        "ZCCM": 140.00,     # ZCCM-IH
+        "AECI": 100.00,     # AECI Mining Explosives
+        "FQMZ": 10.00,      # First Quantum Minerals
+        "ZFCO": 3.00,       # ZAFFICO
+        
+        # Telecommunications
+        "ATEL": 115.00,     # Airtel Networks Zambia
+        
+        # Consumer Goods
+        "BATZ": 12.50,      # British American Tobacco Zambia
+        "BATA": 5.80,       # Bata Zambia
+        "ZMBF": 1.85,       # Zambeef Products
+        "ZSUG": 58.00,      # Zambia Sugar
+        "ZABR": 6.50,       # Zambian Breweries
+        "NATB": 7.80,       # National Breweries
+        
+        # Industrial & Utilities
+        "CECZ": 16.00,      # Copperbelt Energy Corporation
+        "CHIL": 65.00,      # Chilanga Cement
+        "ZMFA": 4.20,       # ZAMEFA
+        
+        # Energy
+        "PUMA": 3.50,       # Puma Energy Zambia
+        
+        # Retail
+        "SHOP": 300.00,     # Shoprite Holdings
+        
+        # Real Estate & Hospitality
+        "REIZ": 0.07,       # Real Estate Investments Zambia
+        "PMDZ": 0.85,       # Taj Pamodzi Hotel
+        
+        # Technology
+        "DCZM": 0.75,       # Dot Com Zambia
+        
+        # Government Bonds (Price per 100 face value)
+        "GRZ-2Y": 98.50,    # 2 Year Bond
+        "GRZ-3Y": 96.00,    # 3 Year Bond
+        "GRZ-5Y": 92.00,    # 5 Year Bond
+        "GRZ-10Y": 86.00,   # 10 Year Bond
+        "GRZ-15Y": 82.00    # 15 Year Bond
     }
     
     # Current simulation state

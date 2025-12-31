@@ -32,12 +32,15 @@ const COLORS = ['#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'
  * PortfolioOptimizer component: UI for multi-asset portfolio optimization and visualization.
  */
 export const PortfolioOptimizer = () => {
+    // Default sample data with realistic LuSE stock returns (monthly returns)
     const [assets, setAssets] = useState<Asset[]>([
-        { ticker: 'CECZ', returns: [0.02, 0.03, -0.01, 0.04, 0.01, 0.02, -0.02, 0.03] },
-        { ticker: 'ZANACO', returns: [0.01, 0.02, 0.01, 0.02, 0.03, 0.01, 0.02, 0.01] },
-        { ticker: 'SCBL', returns: [0.015, 0.025, 0.005, 0.03, 0.02, 0.01, 0.03, 0.025] },
+        { ticker: 'ZCCM', returns: [0.025, 0.015, -0.02, 0.035, 0.01, 0.028, -0.015, 0.022] },
+        { ticker: 'CECZ', returns: [0.018, 0.022, -0.008, 0.03, 0.012, 0.015, -0.01, 0.025] },
+        { ticker: 'ZNCO', returns: [0.012, 0.018, 0.005, 0.015, 0.02, 0.008, 0.015, 0.012] },
+        { ticker: 'ATEL', returns: [0.02, 0.025, 0.01, 0.022, 0.018, 0.015, 0.012, 0.02] },
     ]);
-    const [riskFreeRate, setRiskFreeRate] = useState<number>(0.20);
+    // Zambian T-bill rate approximately 12-14% for short-term, using 13% annualized
+    const [riskFreeRate, setRiskFreeRate] = useState<number>(0.13);
     const [objective, setObjective] = useState<'max_sharpe' | 'min_vol' | 'equal_weight'>('max_sharpe');
     const [result, setResult] = useState<OptimizationResult | null>(null);
     const [frontierData, setFrontierData] = useState<FrontierResult | null>(null);
