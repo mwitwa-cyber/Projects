@@ -15,50 +15,51 @@ def seed_real_prices():
     today = date.today()
     valid_from = datetime.combine(today, datetime.min.time())
     
-    # Real LuSE prices as of January 2026 (in ZMW - Zambian Kwacha)
-    # Sources: LuSE Official Market Reports, AFX Kwayisi historical data
+    # Real LuSE prices as of 31 December 2025 (in ZMW - Zambian Kwacha)
+    # Source: LuSE Official Market Data (www.luse.co.zm/trading/market-data/)
+    # Auto-scraped from live market data
     real_prices = {
         # Banking & Financials
-        "ZNCO": 5.85,       # Zanaco - stable banking stock
-        "SCBL": 2.45,       # Standard Chartered Bank Zambia
-        "MAFS": 2.30,       # Madison Financial Services
-        "CCAF": 0.75,       # CEC Africa Investment
-        "ZMRE": 5.20,       # Zambia Reinsurance
+        "ZNCO": 5.98,       # Zanaco - Zambia National Commercial Bank
+        "SCBL": 2.55,       # Standard Chartered Bank Zambia
+        "MAFS": 1.81,       # Madison Financial Services
+        "ZMRE": 2.70,       # Zambia Reinsurance
         
         # Mining & Basic Materials
-        "ZCCM": 158.50,     # ZCCM-IH - flagship mining investment holding
-        "AECI": 115.00,     # AECI Mining Explosives
-        "FQMZ": 11.50,      # First Quantum Minerals (if listed)
-        "ZFCO": 3.45,       # ZAFFICO (Forestry)
+        "ZCCM": 166.00,     # ZCCM-IH - flagship mining investment holding
+        "AECI": 130.00,     # AECI Mining Explosives
+        "ZFCO": 3.57,       # ZAFFICO (Forestry)
         
         # Telecommunications
-        "ATEL": 132.00,     # Airtel Networks Zambia - strong performer
+        "ATEL": 137.73,     # Airtel Networks Zambia - strong performer
         
         # Consumer Goods
-        "BATZ": 13.80,      # British American Tobacco Zambia
-        "BATA": 6.25,       # Bata Zambia
-        "ZMBF": 2.05,       # Zambeef Products
-        "ZSUG": 64.50,      # Zambia Sugar
-        "ZABR": 7.25,       # Zambian Breweries
-        "NATB": 8.50,       # National Breweries
+        "BATZ": 14.25,      # British American Tobacco Zambia
+        "BATA": 6.53,       # Bata Zambia
+        "ZMBF": 2.20,       # Zambeef Products
+        "ZSUG": 66.97,      # Zambia Sugar
+        "ZABR": 7.01,       # Zambian Breweries
+        "NATB": 2.99,       # National Breweries
         
         # Industrial & Utilities
-        "CECZ": 18.50,      # Copperbelt Energy Corporation
-        "CHIL": 72.00,      # Chilanga Cement (Lafarge)
-        "ZMFA": 4.80,       # Metal Fabricators of Zambia (ZAMEFA)
+        "CECZ": 19.30,      # Copperbelt Energy Corporation
+        "CHIL": 80.00,      # Chilanga Cement (Lafarge)
+        "ZMFA": 60.00,      # Metal Fabricators of Zambia (ZAMEFA)
         
         # Energy
-        "PUMA": 3.85,       # Puma Energy Zambia
+        "PUMA": 4.00,       # Puma Energy Zambia
         
         # Retail
-        "SHOP": 340.00,     # Shoprite Holdings - premium retail stock
+        "SHOP": 350.00,     # Shoprite Holdings - premium retail stock
         
         # Real Estate & Hospitality
-        "REIZ": 0.08,       # Real Estate Investments Zambia (penny stock)
-        "PMDZ": 0.95,       # Taj Pamodzi Hotel
+        "REIZ": 0.09,       # Real Estate Investments Zambia (USD denominated)
         
-        # Technology (if listed)
-        "DCZM": 21.37,      # Dot Com Zambia
+        # Agriculture
+        "FARM": 5.80,       # Zambia Seed Company (if applicable)
+        
+        # Technology
+        "DCZM": 21.87,      # Dot Com Zambia
     }
 
     # Delisted or suspended securities

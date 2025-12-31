@@ -86,49 +86,50 @@ def seed():
     start_date = date.today() - timedelta(days=365)
     
     # Base prices as of 1 year ago (January 2025) - realistic LuSE historical values
+    # Calculated based on current prices and LASI YTD performance (+67.86%)
     # These will drift toward current prices over the simulation period
     base_prices = {
         # Banking & Financials
-        "ZNCO": 5.20,       # Zanaco
-        "SCBL": 2.20,       # Standard Chartered Bank Zambia
-        "MAFS": 2.00,       # Madison Financial Services
-        "CCAF": 0.65,       # CEC Africa Investment
-        "ZMRE": 4.80,       # Zambia Reinsurance
+        "ZNCO": 3.56,       # Zanaco (current: 5.98)
+        "SCBL": 1.52,       # Standard Chartered Bank Zambia (current: 2.55)
+        "MAFS": 1.08,       # Madison Financial Services (current: 1.81)
+        "ZMRE": 1.61,       # Zambia Reinsurance (current: 2.70)
         
         # Mining & Basic Materials  
-        "ZCCM": 140.00,     # ZCCM-IH
-        "AECI": 100.00,     # AECI Mining Explosives
-        "FQMZ": 10.00,      # First Quantum Minerals
-        "ZFCO": 3.00,       # ZAFFICO
+        "ZCCM": 98.89,      # ZCCM-IH (current: 166.00)
+        "AECI": 77.44,      # AECI Mining Explosives (current: 130.00)
+        "ZFCO": 2.13,       # ZAFFICO (current: 3.57)
         
         # Telecommunications
-        "ATEL": 115.00,     # Airtel Networks Zambia
+        "ATEL": 82.05,      # Airtel Networks Zambia (current: 137.73)
         
         # Consumer Goods
-        "BATZ": 12.50,      # British American Tobacco Zambia
-        "BATA": 5.80,       # Bata Zambia
-        "ZMBF": 1.85,       # Zambeef Products
-        "ZSUG": 58.00,      # Zambia Sugar
-        "ZABR": 6.50,       # Zambian Breweries
-        "NATB": 7.80,       # National Breweries
+        "BATZ": 8.49,       # British American Tobacco Zambia (current: 14.25)
+        "BATA": 3.89,       # Bata Zambia (current: 6.53)
+        "ZMBF": 1.31,       # Zambeef Products (current: 2.20)
+        "ZSUG": 39.90,      # Zambia Sugar (current: 66.97)
+        "ZABR": 4.18,       # Zambian Breweries (current: 7.01)
+        "NATB": 1.78,       # National Breweries (current: 2.99)
         
         # Industrial & Utilities
-        "CECZ": 16.00,      # Copperbelt Energy Corporation
-        "CHIL": 65.00,      # Chilanga Cement
-        "ZMFA": 4.20,       # ZAMEFA
+        "CECZ": 11.50,      # Copperbelt Energy Corporation (current: 19.30)
+        "CHIL": 47.66,      # Chilanga Cement (current: 80.00)
+        "ZMFA": 35.74,      # ZAMEFA (current: 60.00)
         
         # Energy
-        "PUMA": 3.50,       # Puma Energy Zambia
+        "PUMA": 2.38,       # Puma Energy Zambia (current: 4.00)
         
         # Retail
-        "SHOP": 300.00,     # Shoprite Holdings
+        "SHOP": 208.50,     # Shoprite Holdings (current: 350.00)
         
         # Real Estate & Hospitality
-        "REIZ": 0.07,       # Real Estate Investments Zambia
-        "PMDZ": 0.85,       # Taj Pamodzi Hotel
+        "REIZ": 0.05,       # Real Estate Investments Zambia USD (current: 0.09)
+        
+        # Agriculture
+        "FARM": 3.46,       # Zambia Seed Company (current: 5.80)
         
         # Technology
-        "DCZM": 19.50,      # Dot Com Zambia
+        "DCZM": 13.03,      # Dot Com Zambia (current: 21.87)
         
         # Government Bonds (Price per 100 face value)
         "GRZ-2Y": 98.50,    # 2 Year Bond
@@ -141,13 +142,13 @@ def seed():
     # Current simulation state
     current_prices = base_prices.copy()
 
-    # Volatility & Liquidity profiles
-    # Higher liquidity = changes more often
+    # Volatility & Liquidity profiles based on LuSE trading volumes
+    # Higher liquidity = changes more often (based on actual trade frequency)
     liquidity_map = {
-        "High": ["CECZ", "ZNCO", "SCBL", "SHOP", "ZABR", "ZSUG", "ATEL", "FQMZ", "ZCCM", 
+        "High": ["ZNCO", "SCBL", "CECZ", "ATEL", "ZCCM", "ZMBF", "CHIL", "SHOP",
                  "GRZ-2Y", "GRZ-3Y", "GRZ-5Y", "GRZ-10Y", "GRZ-15Y"], # Bonds are liquid
-        "Medium": ["AECI", "CHIL", "PUMA", "ZMBF", "BATZ", "ZMRE", "ZFCO"],
-        "Low": ["BATA", "CCAF", "DCZM", "MAFS", "NATB", "PMDZ", "REIZ", "ZMFA"]
+        "Medium": ["AECI", "BATZ", "ZSUG", "ZABR", "PUMA", "NATB", "ZMFA", "DCZM"],
+        "Low": ["BATA", "MAFS", "ZMRE", "ZFCO", "REIZ", "FARM"]
     }
     
     def get_liquidity(ticker):
