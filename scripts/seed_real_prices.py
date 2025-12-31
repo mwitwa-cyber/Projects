@@ -58,7 +58,7 @@ def seed_real_prices():
         "PMDZ": 0.95,       # Taj Pamodzi Hotel
         
         # Technology (if listed)
-        "DCZM": 0.85,       # Dot Com Zambia
+        "DCZM": 21.37,      # Dot Com Zambia
     }
 
     # Delisted or suspended securities

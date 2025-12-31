@@ -128,7 +128,7 @@ def seed():
         "PMDZ": 0.85,       # Taj Pamodzi Hotel
         
         # Technology
-        "DCZM": 0.75,       # Dot Com Zambia
+        "DCZM": 19.50,      # Dot Com Zambia
         
         # Government Bonds (Price per 100 face value)
         "GRZ-2Y": 98.50,    # 2 Year Bond
