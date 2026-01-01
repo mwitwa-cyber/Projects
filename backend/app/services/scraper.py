@@ -14,6 +14,24 @@ from app.services.market_data import MarketDataService
 from app.core.models import Security
 
 
+# ============ CURRENCY CONVERSION ============
+
+# USD-denominated securities on LuSE that need conversion to ZMW
+USD_DENOMINATED_SECURITIES = {"REIZ"}
+
+
+def convert_to_zmw(ticker: str, price: float) -> float:
+    """Convert USD-denominated securities to ZMW using live exchange rate."""
+    if ticker.upper() in USD_DENOMINATED_SECURITIES:
+        try:
+            from app.services.currency import convert_usd_to_zmw
+            return convert_usd_to_zmw(price)
+        except ImportError:
+            # Fallback if currency module not available
+            return round(price * 22.50, 2)
+    return price
+
+
 # ============ PROVIDER STRATEGY PATTERN ============
 
 class PriceProvider(ABC):
@@ -228,6 +246,9 @@ class MarketScraper:
             fallback = SimulatorProvider().fetch_price(sec.ticker)
             price = fallback["price"]
             volume = fallback.get("volume", 0)
+
+        # Convert USD-denominated securities to ZMW
+        price = convert_to_zmw(sec.ticker, price)
 
         service.ingest_price(sec.ticker, price, volume, today)
 

@@ -28,6 +28,42 @@ class SecurityResponse(BaseModel):
     name: str
     sector: str
 
+class ExchangeRateResponse(BaseModel):
+    base: str
+    target: str
+    rate: float
+    source: str
+    timestamp: str
+
+@router.get("/exchange-rate", response_model=ExchangeRateResponse)
+@cache(expire=3600)  # Cache for 1 hour
+def get_exchange_rate():
+    """
+    Get current USD/ZMW exchange rate.
+    Sources (in order of priority):
+    1. Bank of Zambia official rate
+    2. ExchangeRate-API
+    3. Frankfurter API
+    4. Environment variable fallback
+    """
+    from datetime import datetime
+    from app.services.currency import get_usd_zmw_rate, _rate_cache
+    
+    rate = get_usd_zmw_rate()
+    
+    # Determine source
+    source = "default"
+    if _rate_cache.get("timestamp"):
+        source = "cached (BoZ/API)"
+    
+    return {
+        "base": "USD",
+        "target": "ZMW",
+        "rate": rate,
+        "source": source,
+        "timestamp": datetime.now().isoformat()
+    }
+
 @router.get("/market-summary", response_model=List[MarketSummaryItem])
 @cache(expire=60)
 def get_market_summary(

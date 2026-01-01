@@ -5,20 +5,32 @@ from datetime import date, datetime
 import random
 
 # Ensure we can import app modules
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'backend'))
 sys.path.append(os.getcwd())
 
 from app.core.database import SessionLocal
 from app.core.models import Security, MarketPrice
+
+# Try to import currency service for live exchange rate
+try:
+    from app.services.currency import get_usd_zmw_rate
+    USD_TO_ZMW = get_usd_zmw_rate()
+except ImportError:
+    USD_TO_ZMW = 22.50  # Fallback rate
 
 def seed_real_prices():
     db = SessionLocal()
     today = date.today()
     valid_from = datetime.combine(today, datetime.min.time())
     
+    # USD-denominated securities (will be converted to ZMW)
+    usd_prices = {
+        "REIZ": 0.09,       # Real Estate Investments Zambia (USD on LuSE)
+    }
+    
     # Real LuSE prices as of 31 December 2025 (in ZMW - Zambian Kwacha)
     # Source: LuSE Official Market Data (www.luse.co.zm/trading/market-data/)
-    # Auto-scraped from live market data
-    real_prices = {
+    zmw_prices = {
         # Banking & Financials
         "ZNCO": 5.98,       # Zanaco - Zambia National Commercial Bank
         "SCBL": 2.55,       # Standard Chartered Bank Zambia
@@ -52,20 +64,24 @@ def seed_real_prices():
         # Retail
         "SHOP": 350.00,     # Shoprite Holdings - premium retail stock
         
-        # Real Estate & Hospitality
-        "REIZ": 0.09,       # Real Estate Investments Zambia (USD denominated)
-        
         # Agriculture
         "FARM": 5.80,       # Zambia Seed Company (if applicable)
         
         # Technology
         "DCZM": 21.87,      # Dot Com Zambia
     }
+    
+    # Convert USD prices to ZMW and merge
+    real_prices = zmw_prices.copy()
+    for ticker, usd_price in usd_prices.items():
+        real_prices[ticker] = round(usd_price * USD_TO_ZMW, 2)
 
     # Delisted or suspended securities
     delisted = ["INVEST", "INVE"]
 
     print(f"Updating prices for {today}...")
+    print(f"USD/ZMW Exchange Rate: {USD_TO_ZMW}")
+    print(f"REIZ (USD 0.09) -> K{real_prices['REIZ']:.2f}")
 
     # Get all securities
     securities = db.query(Security).all()

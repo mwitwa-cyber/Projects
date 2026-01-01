@@ -12,12 +12,21 @@ import app.models.portfolio
 import app.models.yield_curve
 import app.models.market_data
 
+# Try to import currency service for live exchange rate
+try:
+    from app.services.currency import get_usd_zmw_rate
+    USD_TO_ZMW = get_usd_zmw_rate()
+except ImportError:
+    USD_TO_ZMW = 22.50  # Fallback rate
+
 def seed():
     # Ensure all tables exist
     Base.metadata.create_all(bind=engine)
     
     db = SessionLocal()
     service = MarketDataService(db)
+    
+    print(f"USD/ZMW Exchange Rate: {USD_TO_ZMW}")
 
     # 1. Create Securities (Full LuSE List)
     tickers = [
@@ -123,7 +132,8 @@ def seed():
         "SHOP": 208.50,     # Shoprite Holdings (current: 350.00)
         
         # Real Estate & Hospitality
-        "REIZ": 0.05,       # Real Estate Investments Zambia USD (current: 0.09)
+        # REIZ is USD-denominated: USD 0.05 (historical) converted to ZMW dynamically
+        "REIZ": round(0.05 * USD_TO_ZMW, 2),  # ~K1.10-1.15 at current rates
         
         # Agriculture
         "FARM": 3.46,       # Zambia Seed Company (current: 5.80)
