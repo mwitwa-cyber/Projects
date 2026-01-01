@@ -51,37 +51,37 @@ export const BacktestStrategy = () => {
     };
 
     return (
-        <div className="space-y-6 animate-fade-in p-6">
-            <h1 className="text-2xl font-bold text-gray-900">Strategy Backtester</h1>
-            <p className="text-gray-500">Simulate portfolio performance using historical data.</p>
+        <div className="min-h-screen bg-fintech-bg space-y-6 animate-fade-in p-6">
+            <h1 className="text-2xl font-bold text-white">Strategy Backtester</h1>
+            <p className="text-slate-400">Simulate portfolio performance using historical data.</p>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Controls */}
-                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 space-y-4 h-fit">
-                    <h2 className="text-lg font-semibold">Configuration</h2>
+                <div className="bg-fintech-card p-6 rounded-lg shadow-sm border border-white/10 space-y-4 h-fit">
+                    <h2 className="text-lg font-semibold text-white">Configuration</h2>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700">Initial Capital</label>
+                        <label className="block text-sm font-medium text-slate-300">Initial Capital</label>
                         <input
                             type="number"
                             value={capital}
                             onChange={(e) => setCapital(Number(e.target.value))}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border"
+                            className="mt-1 block w-full rounded-md border-white/20 bg-white/10 shadow-sm p-2 border text-white"
                         />
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700">Start Date</label>
+                        <label className="block text-sm font-medium text-slate-300">Start Date</label>
                         <input
                             type="date"
                             value={startDate}
                             onChange={(e) => setStartDate(e.target.value)}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border"
+                            className="mt-1 block w-full rounded-md border-white/20 bg-white/10 shadow-sm p-2 border text-white"
                         />
                     </div>
 
                     <div className="space-y-2">
-                        <label className="block text-sm font-medium text-gray-700">Portfolio Allocation</label>
+                        <label className="block text-sm font-medium text-slate-300">Portfolio Allocation</label>
                         {assets.map((asset, idx) => (
                             <div key={idx} className="flex gap-2">
                                 <input
@@ -89,21 +89,21 @@ export const BacktestStrategy = () => {
                                     placeholder="Ticker (e.g. ZNCO)"
                                     value={asset.ticker}
                                     onChange={(e) => updateAsset(idx, 'ticker', e.target.value)}
-                                    className="flex-1 rounded-md border-gray-300 shadow-sm p-2 border uppercase"
+                                    className="flex-1 rounded-md border-white/20 bg-white/10 shadow-sm p-2 border uppercase text-white placeholder-slate-500"
                                 />
                                 <input
                                     type="number"
                                     placeholder="Wgt (0-1)"
                                     value={asset.weight}
                                     onChange={(e) => updateAsset(idx, 'weight', e.target.value)}
-                                    className="w-24 rounded-md border-gray-300 shadow-sm p-2 border"
+                                    className="w-24 rounded-md border-white/20 bg-white/10 shadow-sm p-2 border text-white"
                                 />
                                 {assets.length > 1 && (
-                                    <button onClick={() => handleRemoveAsset(idx)} className="text-red-500 px-2">×</button>
+                                    <button onClick={() => handleRemoveAsset(idx)} className="text-red-400 px-2 hover:text-red-300">×</button>
                                 )}
                             </div>
                         ))}
-                        <button onClick={handleAddAsset} className="text-sm text-blue-600 hover:text-blue-800">
+                        <button onClick={handleAddAsset} className="text-sm text-blue-400 hover:text-blue-300">
                             + Add Asset
                         </button>
                     </div>
@@ -118,7 +118,7 @@ export const BacktestStrategy = () => {
                     </button>
 
                     {error && (
-                        <div className="p-3 bg-red-50 text-red-700 text-sm rounded-md">
+                        <div className="p-3 bg-red-500/10 text-red-400 text-sm rounded-md border border-red-500/20">
                             {error}
                         </div>
                     )}
@@ -129,30 +129,31 @@ export const BacktestStrategy = () => {
                     {result ? (
                         <>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                <MetricCard label="Total Return" value={`${(result.metrics.total_return * 100).toFixed(2)}%`} color={result.metrics.total_return >= 0 ? "text-green-600" : "text-red-600"} />
+                                <MetricCard label="Total Return" value={`${(result.metrics.total_return * 100).toFixed(2)}%`} color={result.metrics.total_return >= 0 ? "text-green-400" : "text-red-400"} />
                                 <MetricCard label="CAGR" value={`${(result.metrics.cagr * 100).toFixed(2)}%`} />
                                 <MetricCard label="Sharpe Ratio" value={result.metrics.sharpe_ratio} />
-                                <MetricCard label="Max Drawdown" value={`${(result.metrics.max_drawdown * 100).toFixed(2)}%`} color="text-red-600" />
+                                <MetricCard label="Max Drawdown" value={`${(result.metrics.max_drawdown * 100).toFixed(2)}%`} color="text-red-400" />
                             </div>
 
-                            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 h-[400px]">
-                                <h3 className="text-lg font-semibold mb-4">Equity Curve</h3>
+                            <div className="bg-fintech-card p-4 rounded-lg shadow-sm border border-white/10 h-[400px]">
+                                <h3 className="text-lg font-semibold mb-4 text-white">Equity Curve</h3>
                                 <ResponsiveContainer width="100%" height="100%">
                                     <LineChart data={result.equity_curve}>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                        <XAxis dataKey="time" tickFormatter={(t) => t.substring(0, 10)} minTickGap={30} />
-                                        <YAxis domain={['auto', 'auto']} />
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" />
+                                        <XAxis dataKey="time" tickFormatter={(t) => t.substring(0, 10)} minTickGap={30} stroke="#94a3b8" />
+                                        <YAxis domain={['auto', 'auto']} stroke="#94a3b8" />
                                         <Tooltip
                                             labelFormatter={(l) => l.substring(0, 10)}
                                             formatter={(val: any) => [`${val?.toFixed(2)} ZMW`, 'Equity']}
+                                            contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155' }}
                                         />
-                                        <Line type="monotone" dataKey="value" stroke="#2563eb" strokeWidth={2} dot={false} />
+                                        <Line type="monotone" dataKey="value" stroke="#38bdf8" strokeWidth={2} dot={false} />
                                     </LineChart>
                                 </ResponsiveContainer>
                             </div>
                         </>
                     ) : (
-                        <div className="h-full flex flex-col items-center justify-center text-gray-400 border-2 border-dashed border-gray-200 rounded-lg">
+                        <div className="h-full flex flex-col items-center justify-center text-slate-500 border-2 border-dashed border-white/10 rounded-lg py-20">
                             <Play className="w-12 h-12 mb-2 opacity-20" />
                             <p>Configure portfolio and run backtest to see results</p>
                         </div>
@@ -163,9 +164,9 @@ export const BacktestStrategy = () => {
     );
 };
 
-const MetricCard = ({ label, value, color = "text-gray-900" }: { label: string, value: string | number, color?: string }) => (
-    <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-        <div className="text-sm text-gray-500">{label}</div>
+const MetricCard = ({ label, value, color = "text-white" }: { label: string, value: string | number, color?: string }) => (
+    <div className="bg-fintech-card p-4 rounded-lg shadow-sm border border-white/10">
+        <div className="text-sm text-slate-400">{label}</div>
         <div className={`text-xl font-bold ${color}`}>{value}</div>
     </div>
 );

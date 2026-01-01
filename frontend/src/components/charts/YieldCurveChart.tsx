@@ -17,10 +17,10 @@ export const YieldCurveChart = ({ curveData, parameters }: YieldCurveChartProps)
     // Simpler: Just plotting the curve first.
 
     return (
-        <div className="w-full h-[400px] bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-            <h3 className="text-lg font-semibold mb-4 text-gray-800">Nelson-Siegel Yield Curve</h3>
+        <div className="w-full h-[400px] bg-fintech-card p-4 rounded-lg shadow-sm border border-white/10">
+            <h3 className="text-lg font-semibold mb-4 text-white">Nelson-Siegel Yield Curve</h3>
             {parameters && (
-                <div className="flex gap-4 mb-4 text-xs text-gray-500">
+                <div className="flex gap-4 mb-4 text-xs text-slate-400">
                     <span>Beta0: {parameters.beta0}</span>
                     <span>Beta1: {parameters.beta1}</span>
                     <span>Beta2: {parameters.beta2}</span>
@@ -38,28 +38,30 @@ export const YieldCurveChart = ({ curveData, parameters }: YieldCurveChartProps)
                         bottom: 5,
                     }}
                 >
-                    <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
                     <XAxis
                         dataKey="ttm"
-                        label={{ value: 'Maturity (Years)', position: 'insideBottomRight', offset: -10 }}
+                        label={{ value: 'Maturity (Years)', position: 'insideBottomRight', offset: -10, fill: '#94a3b8' }}
                         type="number"
                         domain={[0, 'dataMax']}
                         tickCount={10}
+                        stroke="#94a3b8"
                     />
                     <YAxis
-                        label={{ value: 'Yield (%)', angle: -90, position: 'insideLeft' }}
+                        label={{ value: 'Yield (%)', angle: -90, position: 'insideLeft', fill: '#94a3b8' }}
                         domain={['auto', 'auto']}
+                        stroke="#94a3b8"
                     />
                     <Tooltip
-                        contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #eee' }}
+                        contentStyle={{ backgroundColor: '#0f172a', borderRadius: '8px', border: '1px solid #334155', color: '#f1f5f9' }}
                         formatter={(value: any) => [`${Number(value).toFixed(2)}%`, 'Yield']}
                         labelFormatter={(label) => `${label} Years`}
                     />
-                    <Legend />
+                    <Legend wrapperStyle={{ color: '#94a3b8' }} />
                     <Line
                         type="monotone"
                         dataKey="yield"
-                        stroke="#8884d8"
+                        stroke="#8b5cf6"
                         strokeWidth={3}
                         dot={false}
                         name="Fitted Curve"

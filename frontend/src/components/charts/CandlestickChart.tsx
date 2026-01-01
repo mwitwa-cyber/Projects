@@ -28,14 +28,14 @@ export const CandlestickChart = ({ data, colors, height = 400 }: CandlestickChar
 
         const chart = createChart(chartContainerRef.current, {
             layout: {
-                background: { type: ColorType.Solid, color: colors?.backgroundColor || '#ffffff' },
-                textColor: colors?.textColor || '#333333',
+                background: { type: ColorType.Solid, color: colors?.backgroundColor || '#151B2B' },
+                textColor: colors?.textColor || '#94a3b8',
             },
             width: chartContainerRef.current.clientWidth,
             height: height,
             grid: {
-                vertLines: { color: '#eeeeee' },
-                horzLines: { color: '#eeeeee' },
+                vertLines: { color: '#334155' },
+                horzLines: { color: '#334155' },
             },
         });
         chartRef.current = chart;

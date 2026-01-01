@@ -65,22 +65,22 @@ export const AnalyticsDashboard = () => {
         }
     };
 
-    if (loading && !yieldData) return <div className="p-8 text-center">Loading Analytics...</div>;
-    if (error) return <div className="p-8 text-center text-red-600">Error: {error}</div>;
+    if (loading && !yieldData) return <div className="min-h-screen bg-fintech-bg p-8 text-center text-white">Loading Analytics...</div>;
+    if (error) return <div className="min-h-screen bg-fintech-bg p-8 text-center text-red-400">Error: {error}</div>;
 
     return (
-        <div className="space-y-8 animate-fade-in">
+        <div className="min-h-screen bg-fintech-bg p-6 space-y-8 animate-fade-in">
             <div className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Advanced Analytics</h1>
-                    <p className="text-gray-500">Quantitative modeling and risk assessment</p>
+                    <h1 className="text-2xl font-bold text-white">Advanced Analytics</h1>
+                    <p className="text-slate-400">Quantitative modeling and risk assessment</p>
                 </div>
 
                 {/* Simple Ticker Selector */}
                 <select
                     value={ticker}
                     onChange={handleTickerChange}
-                    className="p-2 border rounded-md shadow-sm bg-white"
+                    className="p-2 border border-white/20 rounded-md shadow-sm bg-fintech-card text-white"
                 >
                     <option value="ZNCO">ZNCO (Liquid)</option>
                     <option value="MAFS">MAFS (Illiquid)</option>
@@ -93,8 +93,8 @@ export const AnalyticsDashboard = () => {
             {/* Section 1: Macro (Yield Curve) */}
             <section>
                 <div className="mb-4 flex items-center gap-2">
-                    <h2 className="text-xl font-semibold text-gray-800">Macro: Yield Curve</h2>
-                    {yieldData?.parameters && <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">Nelson-Siegel Fit</span>}
+                    <h2 className="text-xl font-semibold text-white">Macro: Yield Curve</h2>
+                    {yieldData?.parameters && <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded">Nelson-Siegel Fit</span>}
                 </div>
                 {yieldData ? (
                     <YieldCurveChart
@@ -103,7 +103,7 @@ export const AnalyticsDashboard = () => {
                         parameters={yieldData.parameters}
                     />
                 ) : (
-                    <div className="h-64 bg-gray-50 rounded flex items-center justify-center text-gray-400">
+                    <div className="h-64 bg-white/5 rounded flex items-center justify-center text-slate-400">
                         Yield Curve Data Unavailable
                     </div>
                 )}
@@ -113,12 +113,12 @@ export const AnalyticsDashboard = () => {
             <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Left: Chart */}
                 <div className="lg:col-span-2 space-y-4">
-                    <h2 className="text-xl font-semibold text-gray-800">Price Action: {ticker}</h2>
-                    <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 h-[450px]">
+                    <h2 className="text-xl font-semibold text-white">Price Action: {ticker}</h2>
+                    <div className="bg-fintech-card p-4 rounded-lg shadow-sm border border-white/10 h-[450px]">
                         {ohlcData && ohlcData.length > 0 ? (
                             <CandlestickChart data={ohlcData} height={400} />
                         ) : (
-                            <div className="h-full flex items-center justify-center text-gray-400">
+                            <div className="h-full flex items-center justify-center text-slate-400">
                                 <AlertCircle className="w-5 h-5 mr-2" />
                                 No Chart Data
                             </div>
@@ -128,16 +128,16 @@ export const AnalyticsDashboard = () => {
 
                 {/* Right: Risk Card */}
                 <div className="space-y-4">
-                    <h2 className="text-xl font-semibold text-gray-800">Risk Profile</h2>
+                    <h2 className="text-xl font-semibold text-white">Risk Profile</h2>
                     {capmData ? (
                         <RiskProfileCard data={capmData} />
                     ) : (
-                        <div className="h-40 bg-gray-50 rounded flex items-center justify-center text-gray-400">
+                        <div className="h-40 bg-white/5 rounded flex items-center justify-center text-slate-400">
                             Calculating Metrics...
                         </div>
                     )}
 
-                    <div className="bg-blue-50 p-4 rounded-lg text-sm text-blue-800 border border-blue-100">
+                    <div className="bg-blue-500/10 p-4 rounded-lg text-sm text-blue-300 border border-blue-500/20">
                         <strong>Methodology Note:</strong><br />
                         • Beta: 1Y regression vs LuSE All-Share.<br />
                         • Liquidity: Penalty applied if daily vol &lt; ZMW 100k.<br />
