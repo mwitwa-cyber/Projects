@@ -1,8 +1,28 @@
 # LuSE Quantitative Platform - Next Steps Implementation Plan
 
-**Document Date**: December 27, 2025  
-**Current Completion**: ~60%  
+**Document Date**: January 2, 2026  
+**Current Completion**: ~65%  
 **Target Completion**: ~85% (Core Features)
+
+---
+
+## 📝 Recent Changes (January 2, 2026)
+
+### Backend Fixes
+- ✅ Extended OHLC endpoint days limit from 365 to 1825 (~5 years)
+- ✅ Fixed ticker validation to allow hyphens for bond symbols (e.g., GRZ-3Y)
+- ✅ Added OHLC fallback to market_prices table when ohlc_1min view doesn't exist
+- ✅ Fixed VaR/CVaR endpoints to accept parameters in request body (was Query params)
+- ✅ Added var_value/cvar_value response fields for frontend compatibility
+
+### Frontend Enhancements
+- ✅ Added Export dropdown menu in Market Pulse with:
+  - Export as PDF (market summary report)
+  - Export as CSV (spreadsheet with all ticker data)
+- ✅ Dropdown auto-closes when clicking outside
+
+### Data Cleanup
+- ✅ Removed non-existent FQMZ ticker from seed data and provider mapping
 
 ---
 
