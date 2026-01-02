@@ -1,0 +1,12 @@
+feat(scraper): refactor LUSE price scraping to provider model
+
+This commit refactors the LUSE price scraping functionality to align with the existing provider-based architecture. The previous implementation, which relied on a standalone script, has been replaced with a more modular and maintainable approach.
+
+Key changes:
+
+- **New `LUSEProvider`**: A `LUSEProvider` class has been created to encapsulate the logic for scraping data from the LUSE website. This promotes code reuse and separation of concerns.
+- **`MarketScraper` Integration**: The `MarketScraper` has been updated to recognize and use the new `LUSEProvider`, ensuring a consistent data fetching process across all providers.
+- **Configuration Update**: The `docker-compose.yml` file has been modified to use the `luse` provider by default and enable the scraper service.
+- **Removed Obsolete Script**: The legacy `update_luse_prices.py` script has been deleted to eliminate redundancy and potential conflicts.
+
+This refactoring improves the overall quality of the codebase by making it more scalable, maintainable, and easier to extend with new data providers in the future.

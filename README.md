@@ -101,7 +101,7 @@ docker-compose -f docker-compose.prod.yml up -d postgres redis
 ## ⚙️ Configuration
 
 ### Environment Variables
-Create a `.env` (local) or `.env.prod` (docker) file in the root directory.
+Create a `.env` (local) or `.env.prod` file in the root directory.
 
 | Variable | Description | Default |
 | :--- | :--- | :--- |
@@ -111,6 +111,27 @@ Create a `.env` (local) or `.env.prod` (docker) file in the root directory.
 | `ENVIRONMENT` | `development` or `production` | `production` |
 | `CORS_ORIGINS` | Allowed API Origins | `["http://localhost:5173"]` |
 | `REDIS_CACHE_URL` | Redis cache connection | `redis://redis:6379/1` |
+
+### Data Providers
+
+The application uses a provider-based strategy to fetch market data. You can configure the desired provider by setting the `SCRAPER_PROVIDER` environment variable in your `docker-compose.yml` or `.env` file.
+
+The following providers are supported:
+
+- `luse`: Scrapes data directly from the Lusaka Securities Exchange website. This is the default and recommended provider for LuSE data.
+- `yfinance`: Fetches data from Yahoo Finance.
+- `alphavantage`: Uses the Alpha Vantage API (requires an API key).
+- `finnhub`: Uses the Finnhub API (requires an API key).
+- `iexcloud`: Uses the IEX Cloud API (requires an API key).
+- `simulator`: A mock provider that generates random price data for testing and development purposes.
+
+To use a specific provider, set the `SCRAPER_PROVIDER` variable accordingly. For example:
+
+```
+SCRAPER_PROVIDER=yfinance
+```
+
+For providers that require an API key, you must also set the corresponding environment variable (e.g., `ALPHAVANTAGE_API_KEY`).
 
 ## 🔐 Security Features
 
@@ -135,6 +156,7 @@ pytest
 *Coverage report is generated in `htmlcov/`*
 
 ## 📚 API Documentation
+
 Once the backend is running, visit:
 *   **Swagger UI**: `/docs` (disabled in production)
 *   **ReDoc**: `/redoc` (disabled in production)
