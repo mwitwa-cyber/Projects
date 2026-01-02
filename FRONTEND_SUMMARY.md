@@ -11,11 +11,12 @@
 │                            IMPLEMENTATION SUMMARY                            │
 └──────────────────────────────────────────────────────────────────────────────┘
 
-📊 COMPONENTS CREATED (4 x Interactive)
-├── 🏪 Market Pulse          → Real-time market data display
-├── 💰 Bond Pricer           → Bond pricing & duration calculations (NEW)
-├── 📈 Portfolio Optimizer   → Multi-asset portfolio optimization (NEW)
-└── ⚠️  Risk Analyzer        → VaR, CVaR, Beta calculations (NEW)
+📊 COMPONENTS CREATED (5 x Interactive)
+├── 🏪 Market Pulse          → Real-time market data with interactive stock tiles
+├── 📊 Stock Detail Modal    → 5Y historical charts + 2Y AI forecasts (NEW)
+├── 💰 Bond Pricer           → Bond pricing & duration calculations
+├── 📈 Portfolio Optimizer   → Multi-asset portfolio optimization
+└── ⚠️  Risk Analyzer        → VaR, CVaR, Beta calculations
 
 🔌 API INTEGRATION
 ├── Valuation APIs        → Bond, DCF, Annuities (5 endpoints)
@@ -31,7 +32,9 @@
 ├── Loading states
 ├── Responsive design (mobile-friendly)
 ├── Interactive charts (Recharts)
-└── Real-time calculations
+├── Real-time calculations
+├── Stock detail modals with forecasting
+└── Linear regression + Monte Carlo predictions
 
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │                            QUICK START (3 MINUTES)                          │
@@ -68,10 +71,11 @@ Projects/
 │   ├── src/
 │   │   ├── App.tsx                  ← Multi-tab main component
 │   │   ├── components/
-│   │   │   ├── MarketPulse.tsx     ← Market data display
-│   │   │   ├── BondPricer.tsx      ← NEW: Bond pricing calculator
-│   │   │   ├── PortfolioOptimizer.tsx ← NEW: Portfolio optimization
-│   │   │   └── RiskAnalyzer.tsx    ← NEW: Risk analysis
+│   │   │   ├── MarketPulse.tsx     ← Market data with clickable stock tiles
+│   │   │   ├── StockDetailModal.tsx ← NEW: 5Y history + 2Y forecast charts
+│   │   │   ├── BondPricer.tsx      ← Bond pricing calculator
+│   │   │   ├── PortfolioOptimizer.tsx ← Portfolio optimization
+│   │   │   └── RiskAnalyzer.tsx    ← Risk analysis
 │   │   ├── services/
 │   │   │   └── api.ts              ← API integration layer
 │   │   ├── lib/

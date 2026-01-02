@@ -14,6 +14,7 @@ The **LuSE Quantitative Investment Analysis Platform** is a sophisticated fintec
     *   **Backtesting**: Historical strategy simulation with equity curves.
 *   **Fintech UI**: Modern, responsive dark-mode dashboard built with React & Tailwind CSS.
     *   **Visualization**: Interactive OHLC charts and Yield Curve plots.
+    *   **Stock Detail Modals**: Click any stock tile to view 5-year historical performance and 2-year AI-powered forecasts using linear regression with Monte Carlo simulation.
     *   **Reporting**: Exportable PDF Market Summaries.
 *   **Security**: 
     *   JWT-based authentication with role-based access control (RBAC).
