@@ -28,32 +28,49 @@ def seed():
     
     print(f"USD/ZMW Exchange Rate: {USD_TO_ZMW}")
 
-    # 1. Create Securities (Full LuSE List)
+    # 1. Create Securities (Full LuSE List - Updated from AfricanFinancials.com Dec 31, 2025)
     tickers = [
-        {"ticker": "AECI", "name": "AECI Mining Explosives", "sector": "Basic Materials"},
-        {"ticker": "ATEL", "name": "Airtel Networks Zambia", "sector": "Telecommunications"},
-        {"ticker": "BATA", "name": "Zambia Bata Shoe Company", "sector": "Consumer Goods"},
-        {"ticker": "BATZ", "name": "British American Tobacco Zambia", "sector": "Consumer Goods"},
-        {"ticker": "CCAF", "name": "CEC Africa Investment", "sector": "Financials"},
-        {"ticker": "CECZ", "name": "Copperbelt Energy Corporation", "sector": "Utilities"},
-        {"ticker": "CHIL", "name": "Chilanga Cement", "sector": "Industrials"},
-        {"ticker": "DCZM", "name": "Dot Com Zambia", "sector": "Technology"},
-        {"ticker": "FQMZ", "name": "First Quantum Minerals", "sector": "Basic Materials"},
-        {"ticker": "MAFS", "name": "Madison Financial Services", "sector": "Financials"},
-        {"ticker": "NATB", "name": "National Breweries", "sector": "Consumer Goods"},
-        {"ticker": "PMDZ", "name": "Pamodzi Hotel", "sector": "Consumer Services"},
-        {"ticker": "PUMA", "name": "Puma Energy Zambia", "sector": "Energy"},
-        {"ticker": "REIZ", "name": "Real Estate Investments Zambia", "sector": "Real Estate"},
-        {"ticker": "SCBL", "name": "Standard Chartered Bank Zambia", "sector": "Banking"},
-        {"ticker": "SHOP", "name": "Shoprite Holdings", "sector": "Retail"},
-        {"ticker": "ZABR", "name": "Zambian Breweries", "sector": "Consumer Goods"},
-        {"ticker": "ZMBF", "name": "Zambeef Products", "sector": "Consumer Goods"},
-        {"ticker": "ZMFA", "name": "Metal Fabricators of Zambia", "sector": "Industrials"},
-        {"ticker": "ZMRE", "name": "Zambia Reinsurance", "sector": "Financials"},
-        {"ticker": "ZNCO", "name": "Zambia National Commercial Bank", "sector": "Banking"},
-        {"ticker": "ZSUG", "name": "Zambia Sugar", "sector": "Consumer Goods"},
-        {"ticker": "ZCCM", "name": "ZCCM Investments Holdings", "sector": "Basic Materials"},
-        {"ticker": "ZFCO", "name": "Zambia Forestry and Forest Industries", "sector": "Basic Materials"},
+        # Mining & Basic Materials
+        {"ticker": "AECI", "name": "AECI Mining Explosives PLC", "sector": "Engineering", "price": 130.00},
+        {"ticker": "ZCCM", "name": "ZCCM Investments Holdings Plc", "sector": "Investment", "price": 166.00},
+        {"ticker": "ZFCO", "name": "Zambia Forestry and Forest Industries", "sector": "Basic Materials", "price": 3.57},
+        
+        # Telecommunications & Technology
+        {"ticker": "ATEL", "name": "Airtel Networks Zambia Plc", "sector": "Technology", "price": 137.73},
+        {"ticker": "DCZM", "name": "Dot Com Zambia Plc", "sector": "Technology", "price": 12.30},  # IPO price
+        
+        # Banking & Financials
+        {"ticker": "SCBL", "name": "Standard Chartered Bank Zambia Plc", "sector": "Banking", "price": 2.55},
+        {"ticker": "ZNCO", "name": "Zanaco Plc", "sector": "Banking", "price": 5.98},
+        {"ticker": "MAFS", "name": "Madison Financial Services", "sector": "Financials", "price": 1.81},
+        {"ticker": "ZMRE", "name": "Zambia Reinsurance Plc", "sector": "Financials", "price": 2.70},
+        {"ticker": "CCAF", "name": "CEC Africa Investment", "sector": "Financials", "price": 0.83},
+        
+        # Energy & Utilities
+        {"ticker": "CECZ", "name": "Copperbelt Energy Corporation Plc", "sector": "Energy", "price": 19.30},
+        {"ticker": "PUMA", "name": "Puma Energy Zambia Plc", "sector": "Energy", "price": 4.00},
+        
+        # Consumer Goods & Agri-Industrial
+        {"ticker": "ZMBF", "name": "Zambeef Products Plc", "sector": "Agri-Industrial", "price": 2.20},
+        {"ticker": "ZSUG", "name": "Zambia Sugar Plc", "sector": "Agri-Industrial", "price": 66.97},
+        {"ticker": "BATA", "name": "Bata Shoe Company Zambia Plc", "sector": "Consumer Goods", "price": 6.53},
+        {"ticker": "BATZ", "name": "British American Tobacco Zambia Plc", "sector": "Consumer Goods", "price": 14.25},
+        {"ticker": "ZABR", "name": "Zambian Breweries Plc", "sector": "Consumer Goods", "price": 7.01},
+        {"ticker": "NATB", "name": "National Breweries Plc", "sector": "Consumer Goods", "price": 2.99},
+        
+        # Industrial
+        {"ticker": "CHIL", "name": "Chilanga Cement Plc", "sector": "Industrials", "price": 80.00},
+        {"ticker": "ZMFA", "name": "Metal Fabricators of Zambia Plc", "sector": "Engineering", "price": 60.00},
+        {"ticker": "FQMZ", "name": "First Quantum Minerals Zambia", "sector": "Basic Materials", "price": 12.85},
+        
+        # Retail
+        {"ticker": "SHOP", "name": "Shoprite Holdings Zambia", "sector": "Retail", "price": 350.00},
+        
+        # Real Estate (USD-denominated - will be converted)
+        {"ticker": "REIZ", "name": "Real Estate Investments Zambia Plc", "sector": "Property", "price": 0.09},  # USD
+        
+        # Hospitality
+        {"ticker": "PMDZ", "name": "Pamodzi Hotel Plc", "sector": "Consumer Services", "price": 5.00},
     ]
 
     print("Seeding Securities...")
@@ -97,49 +114,51 @@ def seed():
     # Base prices as of 1 year ago (January 2025) - realistic LuSE historical values
     # Calculated based on current prices and LASI YTD performance (+67.86%)
     # These will drift toward current prices over the simulation period
+    # Base prices as of 1 year ago (January 2025) - calculated from current prices
+    # Current prices from AfricanFinancials.com (Dec 31, 2025)
+    # 1-year returns: LASI +67.86%, so base = current / (1 + growth_rate)
     base_prices = {
+        # Mining & Investment (High growth sector)
+        "ZCCM": 98.89,      # ZCCM-IH (current: K166.00, +68%)
+        "AECI": 77.44,      # AECI Mining Explosives (current: K130.00, +68%)
+        "ZFCO": 2.13,       # ZAFFICO (current: K3.57, +68%)
+        "FQMZ": 7.65,       # First Quantum (current: K12.85, +68%)
+        
+        # Telecommunications & Technology (High growth)
+        "ATEL": 43.50,      # Airtel Networks Zambia (current: K137.73, +217%)
+        "DCZM": 12.30,      # Dot Com Zambia (IPO Dec 2025)
+        
         # Banking & Financials
-        "ZNCO": 3.56,       # Zanaco (current: 5.98)
-        "SCBL": 1.52,       # Standard Chartered Bank Zambia (current: 2.55)
-        "MAFS": 1.08,       # Madison Financial Services (current: 1.81)
-        "ZMRE": 1.61,       # Zambia Reinsurance (current: 2.70)
+        "SCBL": 2.65,       # Standard Chartered (current: K2.55, -4%)
+        "ZNCO": 3.56,       # Zanaco (current: K5.98, +68%)
+        "MAFS": 1.08,       # Madison Financial (current: K1.81, +68%)
+        "ZMRE": 1.61,       # Zambia Reinsurance (current: K2.70, +68%)
+        "CCAF": 0.50,       # CEC Africa (current: K0.83, +66%)
         
-        # Mining & Basic Materials  
-        "ZCCM": 98.89,      # ZCCM-IH (current: 166.00)
-        "AECI": 77.44,      # AECI Mining Explosives (current: 130.00)
-        "ZFCO": 2.13,       # ZAFFICO (current: 3.57)
+        # Energy & Utilities
+        "CECZ": 13.84,      # CEC (current: K19.30, +39%)
+        "PUMA": 5.80,       # Puma Energy (current: K4.00, -31%)
         
-        # Telecommunications
-        "ATEL": 82.05,      # Airtel Networks Zambia (current: 137.73)
+        # Consumer Goods & Agri-Industrial
+        "ZMBF": 2.13,       # Zambeef (current: K2.20, +3%)
+        "ZSUG": 36.04,      # Zambia Sugar (current: K66.97, +86%)
+        "BATA": 3.89,       # Bata (current: K6.53, +68%)
+        "BATZ": 8.49,       # BAT Zambia (current: K14.25, +68%)
+        "ZABR": 4.18,       # Zambian Breweries (current: K7.01, +68%)
+        "NATB": 1.78,       # National Breweries (current: K2.99, +68%)
         
-        # Consumer Goods
-        "BATZ": 8.49,       # British American Tobacco Zambia (current: 14.25)
-        "BATA": 3.89,       # Bata Zambia (current: 6.53)
-        "ZMBF": 1.31,       # Zambeef Products (current: 2.20)
-        "ZSUG": 39.90,      # Zambia Sugar (current: 66.97)
-        "ZABR": 4.18,       # Zambian Breweries (current: 7.01)
-        "NATB": 1.78,       # National Breweries (current: 2.99)
-        
-        # Industrial & Utilities
-        "CECZ": 11.50,      # Copperbelt Energy Corporation (current: 19.30)
-        "CHIL": 47.66,      # Chilanga Cement (current: 80.00)
-        "ZMFA": 35.74,      # ZAMEFA (current: 60.00)
-        
-        # Energy
-        "PUMA": 2.38,       # Puma Energy Zambia (current: 4.00)
+        # Industrial
+        "CHIL": 47.66,      # Chilanga Cement (current: K80.00, +68%)
+        "ZMFA": 35.74,      # ZAMEFA (current: K60.00, +68%)
         
         # Retail
-        "SHOP": 208.50,     # Shoprite Holdings (current: 350.00)
+        "SHOP": 208.50,     # Shoprite (current: K350.00, +68%)
         
-        # Real Estate & Hospitality
-        # REIZ is USD-denominated: USD 0.05 (historical) converted to ZMW dynamically
-        "REIZ": round(0.05 * USD_TO_ZMW, 2),  # ~K1.10-1.15 at current rates
+        # Real Estate (USD-denominated)
+        "REIZ": round(0.07 * USD_TO_ZMW, 2),  # USD 0.07 -> K (current: USD 0.09, +29%)
         
-        # Agriculture
-        "FARM": 3.46,       # Zambia Seed Company (current: 5.80)
-        
-        # Technology
-        "DCZM": 13.03,      # Dot Com Zambia (current: 21.87)
+        # Hospitality
+        "PMDZ": 2.98,       # Pamodzi Hotel (current: K5.00, +68%)
         
         # Government Bonds (Price per 100 face value)
         "GRZ-2Y": 98.50,    # 2 Year Bond
@@ -152,13 +171,16 @@ def seed():
     # Current simulation state
     current_prices = base_prices.copy()
 
-    # Volatility & Liquidity profiles based on LuSE trading volumes
-    # Higher liquidity = changes more often (based on actual trade frequency)
+    # Volatility & Liquidity profiles based on LuSE trading volumes (from AfricanFinancials)
+    # Higher liquidity = changes more often (based on actual 1Y liquidity data)
     liquidity_map = {
-        "High": ["ZNCO", "SCBL", "CECZ", "ATEL", "ZCCM", "ZMBF", "CHIL", "SHOP",
-                 "GRZ-2Y", "GRZ-3Y", "GRZ-5Y", "GRZ-10Y", "GRZ-15Y"], # Bonds are liquid
-        "Medium": ["AECI", "BATZ", "ZSUG", "ZABR", "PUMA", "NATB", "ZMFA", "DCZM"],
-        "Low": ["BATA", "MAFS", "ZMRE", "ZFCO", "REIZ", "FARM"]
+        # High liquidity (>K100M/year): CEC K615M, ATEL K205M, CECZ, ZCCM, etc.
+        "High": ["CECZ", "ATEL", "ZNCO", "SCBL", "ZCCM", "ZSUG", "ZMBF", "CHIL", "SHOP",
+                 "GRZ-2Y", "GRZ-3Y", "GRZ-5Y", "GRZ-10Y", "GRZ-15Y"],
+        # Medium liquidity (K10M-K100M/year)
+        "Medium": ["AECI", "BATZ", "ZABR", "PUMA", "NATB", "ZMFA", "REIZ", "FQMZ"],
+        # Low liquidity (<K10M/year)
+        "Low": ["BATA", "MAFS", "ZMRE", "ZFCO", "DCZM", "PMDZ", "CCAF"]
     }
     
     def get_liquidity(ticker):
