@@ -42,8 +42,8 @@ services:
       - DATABASE_URL=postgresql://postgres:password@db:5432/luse_quant
       
       # Scraper Configuration
-      - ENABLE_SCRAPER=false
-      - SCRAPER_PROVIDER=simulator          # Options: simulator, yfinance, alphavantage, finnhub, iexcloud
+      - ENABLE_SCRAPER=true
+      - SCRAPER_PROVIDER=luse          # Options: simulator, yfinance, alphavantage, finnhub, iexcloud, luse
       - SCRAPER_INTERVAL=60                 # Seconds between scraper runs
       
       # Provider API Keys (set in .env file or export)

@@ -12,6 +12,7 @@ import requests
 from app.core.db import SessionLocal
 from app.services.market_data import MarketDataService
 from app.core.models import Security
+from app.services.luse_provider import LUSEProvider
 
 
 # ============ CURRENCY CONVERSION ============
@@ -217,6 +218,8 @@ class MarketScraper:
             return IEXCloudProvider()
         elif name == "yfinance":
             return YFinanceProvider()
+        elif name == "luse":
+            return LUSEProvider()
         else:
             # Default to simulator
             return SimulatorProvider()
