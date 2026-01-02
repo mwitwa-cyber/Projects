@@ -24,6 +24,7 @@ interface FrontierResult {
     frontier: Array<{ volatility: number; return: number }>;
     n_points: number;
     assets: string[];
+    optimalPoint?: { volatility: number; return: number };
 }
 
 const COLORS = ['#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
@@ -115,7 +116,7 @@ export const PortfolioOptimizer = () => {
             // Also fetch efficient frontier
             const frontierResult = await optimizationAPI.efficientFrontier({
                 returns_data: returnsData,
-                num_points: 50,
+                n_points: 50,
                 risk_free_rate: riskFreeRate,
             });
 
@@ -353,19 +354,19 @@ export const PortfolioOptimizer = () => {
                                 </div>
 
                                 <div className="space-y-3">
-                                    {Object.entries(result.optimal_weights)
-                                        .filter(([_, weight]) => weight > 0.001)
+                                    {Object.entries(result.weights)
+                                        .filter(([_, weight]) => (weight as number) > 0.001)
                                         .map(([ticker, weight]) => (
                                             <div key={ticker} className="bg-white/5 rounded-lg p-3 flex justify-between items-center">
                                                 <span className="font-semibold text-white">{ticker}</span>
                                                 <div className="text-right">
                                                     <div className="text-lg font-bold text-emerald-400">
-                                                        {(weight * 100).toFixed(1)}%
+                                                        {((weight as number) * 100).toFixed(1)}%
                                                     </div>
                                                     <div className="w-32 bg-white/10 rounded-full h-2 mt-1 overflow-hidden">
                                                         <div
                                                             className="bg-gradient-to-r from-emerald-500 to-green-400 h-full"
-                                                            style={{ width: `${weight * 100}%` }}
+                                                            style={{ width: `${(weight as number) * 100}%` }}
                                                         />
                                                     </div>
                                                 </div>

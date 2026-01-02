@@ -19,31 +19,63 @@ const mockData = [
 const TickerCard = ({ ticker, name, price, change, sector, history, onClick }: { ticker: string, name: string, price: number, change: number, sector: string, history: any[], onClick: () => void }) => (
     <div
         onClick={onClick}
-        className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-4 shadow-xl hover:scale-105 transition-transform duration-300 cursor-pointer group"
+        className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md border border-white/20 rounded-xl p-5 shadow-xl hover:scale-[1.03] hover:border-brand-primary/50 hover:shadow-brand-primary/20 transition-all duration-300 cursor-pointer group relative overflow-hidden"
     >
-        <div className="flex justify-between items-start mb-2">
-            <div>
-                <h3 className="text-xl font-bold text-white group-hover:text-brand-primary transition-colors">{ticker}</h3>
-                <p className="text-xs text-brand-primary/80 truncate w-32">{name}</p>
-                <div className="mt-1">
-                    <span className="text-[10px] uppercase tracking-wider bg-white/5 px-1.5 py-0.5 rounded text-slate-400">{sector}</span>
+        {/* Glow effect on hover */}
+        <div className="absolute inset-0 bg-gradient-to-r from-brand-primary/0 via-brand-primary/5 to-brand-primary/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+        <div className="relative z-10">
+            <div className="flex justify-between items-start mb-3">
+                <div>
+                    <h3 className="text-xl font-bold text-white group-hover:text-brand-primary transition-colors">{ticker}</h3>
+                    <p className="text-xs text-slate-400 truncate w-32" title={name}>{name}</p>
+                    <div className="mt-1.5">
+                        <span className="text-[10px] uppercase tracking-wider bg-white/5 px-2 py-0.5 rounded text-slate-400">{sector}</span>
+                    </div>
+                </div>
+                <div className="text-right">
+                    <span className={cn("px-2.5 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-1",
+                        change >= 0 ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "bg-rose-500/20 text-rose-400 border border-rose-500/30"
+                    )}>
+                        {change >= 0 ? '↑' : '↓'} {change > 0 ? "+" : ""}{change.toFixed(2)}%
+                    </span>
                 </div>
             </div>
-            <span className={cn("px-2 py-1 rounded-full text-xs font-medium", change >= 0 ? "bg-emerald-500/20 text-emerald-400" : "bg-rose-500/20 text-rose-400")}>
-                {change > 0 ? "+" : ""}{change.toFixed(2)}%
-            </span>
-        </div>
 
-        <div className="flex items-baseline gap-2 mt-4">
-            <span className="text-2xl font-bold text-white">K{price?.toFixed(2) || '---'}</span>
-        </div>
+            {/* Price - Main Focus */}
+            <div className="bg-black/20 rounded-lg px-3 py-2 mb-3">
+                <div className="text-xs text-slate-500 mb-0.5">Current Price</div>
+                <div className="flex items-baseline gap-2">
+                    <span className="text-3xl font-extrabold text-white tracking-tight">
+                        {price != null ? `K${price.toFixed(2)}` : '---'}
+                    </span>
+                    <span className="text-xs text-slate-500">ZMW</span>
+                </div>
+            </div>
 
-        <div className="h-16 mt-2 -mx-2 opacity-80 group-hover:opacity-100 transition-opacity">
-            <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={history && history.length > 0 ? history : []}>
-                    <Line type="monotone" dataKey="value" stroke={change >= 0 ? "#10b981" : "#f43f5e"} strokeWidth={2} dot={false} />
-                </LineChart>
-            </ResponsiveContainer>
+            {/* Sparkline Chart */}
+            <div className="h-14 -mx-1 opacity-80 group-hover:opacity-100 transition-opacity">
+                {history && history.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={history}>
+                            <Line
+                                type="monotone"
+                                dataKey="value"
+                                stroke={change >= 0 ? "#10b981" : "#f43f5e"}
+                                strokeWidth={2}
+                                dot={false}
+                            />
+                        </LineChart>
+                    </ResponsiveContainer>
+                ) : (
+                    <div className="h-full flex items-center justify-center text-xs text-slate-500">No chart data</div>
+                )}
+            </div>
+
+            {/* Click hint */}
+            <div className="mt-2 text-[10px] text-slate-500 text-center opacity-0 group-hover:opacity-100 transition-opacity">
+                Click for details & forecast →
+            </div>
         </div>
     </div>
 );
@@ -104,10 +136,23 @@ export const MarketPulse = () => {
                 }
                 const data = await response.json();
 
-                const mapped = data.map((item: any) => ({
-                    ...item,
-                    change: item.change_percent
-                }));
+                const mapped = data.map((item: any) => {
+                    // Get price from the latest history entry if price is null
+                    let displayPrice = item.price;
+                    if (displayPrice == null && item.history && item.history.length > 0) {
+                        // Sort by date descending and get latest
+                        const sortedHistory = [...item.history].sort((a: any, b: any) =>
+                            new Date(b.date).getTime() - new Date(a.date).getTime()
+                        );
+                        displayPrice = sortedHistory[0].value;
+                    }
+
+                    return {
+                        ...item,
+                        price: displayPrice,
+                        change: item.change_percent ?? item.change ?? 0
+                    };
+                });
 
                 setSecurities(mapped);
             } catch (err) {

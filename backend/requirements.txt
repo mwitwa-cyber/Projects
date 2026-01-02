@@ -1,5 +1,7 @@
 # Add pydantic-settings for config
 pydantic-settings
+pydantic[email]
+email-validator
 fastapi
 uvicorn[standard]
 sqlalchemy

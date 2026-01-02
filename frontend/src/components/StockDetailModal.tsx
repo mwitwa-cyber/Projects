@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from 'react';
-import { X, TrendingUp, TrendingDown, Calendar, AlertCircle } from 'lucide-react';
+import { X, TrendingUp, TrendingDown, Calendar, AlertCircle, Loader2 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { cn } from '../lib/utils';
 
@@ -13,6 +13,7 @@ interface StockDetailModalProps {
         price: number;
         change: number;
         sector?: string;
+        history?: { date: string; value: number }[];
     } | null;
 }
 
@@ -24,41 +25,182 @@ interface ChartPoint {
 
 export const StockDetailModal = ({ isOpen, onClose, stock }: StockDetailModalProps) => {
     const [data, setData] = useState<ChartPoint[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [stats, setStats] = useState<{
+        high52w: number;
+        low52w: number;
+        avgPrice: number;
+        volatility: number;
+    } | null>(null);
 
     useEffect(() => {
         if (isOpen && stock) {
-            generateMockData(stock.price);
+            fetchHistoricalData(stock);
         }
     }, [isOpen, stock]);
 
-    const generateMockData = (currentPrice: number) => {
+    const fetchHistoricalData = async (stockData: NonNullable<typeof stock>) => {
+        setLoading(true);
+        try {
+            // Get current price from stock or history
+            let currentPrice = stockData.price;
+            if (currentPrice == null && stockData.history && stockData.history.length > 0) {
+                const sortedHistory = [...stockData.history].sort((a, b) =>
+                    new Date(b.date).getTime() - new Date(a.date).getTime()
+                );
+                currentPrice = sortedHistory[0].value;
+            }
+            currentPrice = currentPrice ?? 0;
+
+            // Fetch OHLC data for the past 5 years (1825 days)
+            const response = await fetch(
+                `http://localhost:8000/api/v1/market-data/ohlc/${stockData.ticker}?days=1825`
+            );
+
+            let historicalPoints: ChartPoint[] = [];
+            let closes: number[] = [];
+
+            if (response.ok) {
+                const ohlcData = await response.json();
+
+                if (ohlcData && ohlcData.length > 0) {
+                    // Convert OHLC data to chart points
+                    historicalPoints = ohlcData.map((d: any) => ({
+                        date: d.time?.substring(0, 10) || d.bucket?.substring(0, 10),
+                        history: d.close
+                    }));
+
+                    // Calculate stats from OHLC data
+                    closes = ohlcData.map((d: any) => d.close).filter((p: any) => p != null);
+                    if (closes.length > 0) {
+                        const high52w = Math.max(...closes);
+                        const low52w = Math.min(...closes);
+                        const avgPrice = closes.reduce((a: number, b: number) => a + b, 0) / closes.length;
+                        // Simple volatility (std dev of daily returns)
+                        const returns = closes.slice(1).map((p: number, i: number) => (p - closes[i]) / closes[i]);
+                        const avgReturn = returns.length > 0 ? returns.reduce((a: number, b: number) => a + b, 0) / returns.length : 0;
+                        const variance = returns.length > 0 ? returns.reduce((a: number, r: number) => a + Math.pow(r - avgReturn, 2), 0) / returns.length : 0;
+                        const volatility = Math.sqrt(variance) * Math.sqrt(252) * 100; // Annualized
+
+                        setStats({ high52w, low52w, avgPrice, volatility: isNaN(volatility) ? 0 : volatility });
+                    }
+                }
+            }
+
+            // If no OHLC data, use the sparkline history from the stock prop
+            if (historicalPoints.length === 0 && stockData.history && stockData.history.length > 0) {
+                historicalPoints = stockData.history.map(h => ({
+                    date: h.date,
+                    history: h.value
+                }));
+                closes = stockData.history.map(h => h.value);
+            }
+
+            // If still no data, generate from current price (5 years of simulated history)
+            if (historicalPoints.length === 0) {
+                historicalPoints = generateHistoricalData(currentPrice, 60); // 60 months = 5 years
+                closes = historicalPoints.map(p => p.history!);
+            }
+
+            // Generate predictions using linear regression on historical data
+            const predictionPoints = generatePredictionsWithRegression(closes, currentPrice);
+
+            // Combine historical and prediction data
+            const combinedData = [...historicalPoints];
+
+            // Add current price as transition point (has both history and prediction)
+            const today = new Date().toISOString().split('T')[0];
+            if (combinedData.length > 0) {
+                combinedData[combinedData.length - 1].prediction = currentPrice;
+            } else {
+                combinedData.push({ date: today, history: currentPrice, prediction: currentPrice });
+            }
+
+            // Add prediction points
+            combinedData.push(...predictionPoints);
+
+            setData(combinedData);
+        } catch (error) {
+            console.error('Failed to fetch historical data:', error);
+            // Fallback to generated data
+            const fallbackData = generateHistoricalData(currentPrice);
+            const predictionPoints = generatePredictions(currentPrice);
+            fallbackData[fallbackData.length - 1].prediction = currentPrice;
+            setData([...fallbackData, ...predictionPoints]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Linear regression helper
+    const linearRegression = (prices: number[]): { slope: number; intercept: number } => {
+        const n = prices.length;
+        if (n < 2) return { slope: 0, intercept: prices[0] || 0 };
+
+        const xMean = (n - 1) / 2;
+        const yMean = prices.reduce((a, b) => a + b, 0) / n;
+
+        let numerator = 0;
+        let denominator = 0;
+
+        for (let i = 0; i < n; i++) {
+            numerator += (i - xMean) * (prices[i] - yMean);
+            denominator += (i - xMean) ** 2;
+        }
+
+        const slope = denominator !== 0 ? numerator / denominator : 0;
+        const intercept = yMean - slope * xMean;
+
+        return { slope, intercept };
+    };
+
+    const generateHistoricalData = (currentPrice: number, months: number = 60): ChartPoint[] => {
         const points: ChartPoint[] = [];
         const today = new Date();
-        const startPrice = currentPrice * 0.7; // Start lower 5 years ago
-        let price = startPrice;
+        let price = currentPrice * 0.6; // Start lower for 5 year history
 
-        // Generate 5 Years of History (Monthly points = 60)
-        for (let i = 60; i > 0; i--) {
+        // Generate history
+        for (let i = months; i > 0; i--) {
             const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
-            // Random walk with drift
-            const change = (Math.random() - 0.45) * 0.05; // Slightly positive drift
+            const change = (Math.random() - 0.45) * 0.06; // Slight positive drift
             price = price * (1 + change);
-
             points.push({
                 date: date.toISOString().split('T')[0],
                 history: price
             });
         }
+        // Ensure last point matches current price
+        if (points.length > 0) {
+            points[points.length - 1].history = currentPrice;
+        }
+        return points;
+    };
 
-        // Bridge current price exactly
-        points[points.length - 1].history = currentPrice;
+    const generatePredictionsWithRegression = (historicalPrices: number[], currentPrice: number): ChartPoint[] => {
+        const points: ChartPoint[] = [];
+        const today = new Date();
 
-        // Generate 1 Year of Prediction
+        // Use last 12 months for trend calculation if available
+        const recentPrices = historicalPrices.slice(-12);
+        const { slope } = linearRegression(recentPrices);
+
+        // Calculate monthly growth rate from regression
+        const avgPrice = recentPrices.reduce((a, b) => a + b, 0) / recentPrices.length;
+        const monthlyGrowthRate = avgPrice > 0 ? slope / avgPrice : 0.005;
+
+        // Add some randomness (Monte Carlo simulation)
         let predPrice = currentPrice;
-        for (let i = 1; i <= 12; i++) {
+        const volatility = 0.025; // 2.5% monthly volatility
+
+        // Generate 24 months (2 years) of predictions
+        for (let i = 1; i <= 24; i++) {
             const date = new Date(today.getFullYear(), today.getMonth() + i, 1);
-            // Prediction algorithm (Positive outlook)
-            const change = (Math.random() - 0.4) * 0.04;
+
+            // Apply trend with noise
+            const trendComponent = monthlyGrowthRate;
+            const noiseComponent = (Math.random() - 0.5) * volatility;
+            const change = trendComponent + noiseComponent;
+
             predPrice = predPrice * (1 + change);
 
             points.push({
@@ -66,26 +208,36 @@ export const StockDetailModal = ({ isOpen, onClose, stock }: StockDetailModalPro
                 prediction: predPrice
             });
         }
+        return points;
+    };
 
-        // Ensure connectivity
-        // Add current price as first point of prediction to connect lines ?? 
-        // Or just let Recharts handle gaps. Recharts handles gaps if undefined.
-        // My schema has history=undefined for prediction points, and vice versa.
-        // To connect them visually, one point needs both, or use `connectNulls`.
+    // Legacy function kept for backwards compatibility
+    const generatePredictions = (currentPrice: number): ChartPoint[] => {
+        const points: ChartPoint[] = [];
+        const today = new Date();
+        let predPrice = currentPrice;
 
-        // Let's add the transition point (Today) having *both* or ensure continuity.
-        // The last history point is "Today". 
-        // Let's make the first prediction point "Today" as well?
-        // Actually, easiest is to have the last history point also serve as start of prediction line.
-        const lastHistIdx = points.findIndex(p => p.prediction !== undefined) - 1;
-        if (lastHistIdx >= 0) {
-            points[lastHistIdx].prediction = points[lastHistIdx].history;
+        // Generate 24 months (2 years) of predictions
+        for (let i = 1; i <= 24; i++) {
+            const date = new Date(today.getFullYear(), today.getMonth() + i, 1);
+            // Positive outlook with some variance
+            const drift = 0.005; // 0.5% monthly drift
+            const volatility = 0.03; // 3% monthly volatility
+            const change = drift + (Math.random() - 0.5) * volatility;
+            predPrice = predPrice * (1 + change);
+            points.push({
+                date: date.toISOString().split('T')[0],
+                prediction: predPrice
+            });
         }
-
-        setData(points);
+        return points;
     };
 
     if (!isOpen || !stock) return null;
+
+    // Ensure price is a number for display
+    const displayPrice = stock.price ?? 0;
+    const displayChange = stock.change ?? 0;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -117,20 +269,44 @@ export const StockDetailModal = ({ isOpen, onClose, stock }: StockDetailModalPro
                 </div>
 
                 {/* Body */}
-                <div className="p-6 space-y-8">
-                    {/* Price Hero */}
-                    <div className="flex items-baseline gap-4">
-                        <span className="text-5xl font-extrabold text-white">
-                            K{stock.price.toFixed(2)}
-                        </span>
-                        <div className={cn(
-                            "flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium",
-                            stock.change >= 0 ? "bg-emerald-500/20 text-emerald-400" : "bg-rose-500/20 text-rose-400"
-                        )}>
-                            {stock.change >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
-                            {Math.abs(stock.change).toFixed(2)}%
+                <div className="p-6 space-y-6 max-h-[calc(100vh-200px)] overflow-y-auto">
+                    {/* Price Hero + Stats */}
+                    <div className="flex flex-wrap items-start justify-between gap-4">
+                        <div className="flex items-baseline gap-4">
+                            <span className="text-5xl font-extrabold text-white">
+                                K{displayPrice.toFixed(2)}
+                            </span>
+                            <div className={cn(
+                                "flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium",
+                                displayChange >= 0 ? "bg-emerald-500/20 text-emerald-400" : "bg-rose-500/20 text-rose-400"
+                            )}>
+                                {displayChange >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+                                {Math.abs(displayChange).toFixed(2)}%
+                            </div>
+                            <span className="text-slate-500 text-sm">Today's Change</span>
                         </div>
-                        <span className="text-slate-500 text-sm">Today's Change</span>
+
+                        {/* Stats Cards */}
+                        {stats && (
+                            <div className="flex gap-3">
+                                <div className="bg-white/5 rounded-lg px-3 py-2 text-center border border-white/10">
+                                    <div className="text-[10px] text-slate-500 uppercase">52W High</div>
+                                    <div className="text-sm font-semibold text-emerald-400">K{stats.high52w.toFixed(2)}</div>
+                                </div>
+                                <div className="bg-white/5 rounded-lg px-3 py-2 text-center border border-white/10">
+                                    <div className="text-[10px] text-slate-500 uppercase">52W Low</div>
+                                    <div className="text-sm font-semibold text-rose-400">K{stats.low52w.toFixed(2)}</div>
+                                </div>
+                                <div className="bg-white/5 rounded-lg px-3 py-2 text-center border border-white/10">
+                                    <div className="text-[10px] text-slate-500 uppercase">Avg Price</div>
+                                    <div className="text-sm font-semibold text-blue-400">K{stats.avgPrice.toFixed(2)}</div>
+                                </div>
+                                <div className="bg-white/5 rounded-lg px-3 py-2 text-center border border-white/10">
+                                    <div className="text-[10px] text-slate-500 uppercase">Volatility</div>
+                                    <div className="text-sm font-semibold text-orange-400">{stats.volatility.toFixed(1)}%</div>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* Performance Chart */}
@@ -147,60 +323,77 @@ export const StockDetailModal = ({ isOpen, onClose, stock }: StockDetailModalPro
                                 </span>
                                 <span className="flex items-center gap-1.5 text-slate-300">
                                     <span className="w-3 h-3 rounded-full bg-indigo-400 border border-indigo-400 border-dashed"></span>
-                                    Prediction (1Y)
+                                    Forecast (2Y)
                                 </span>
                             </div>
                         </div>
 
-                        <div className="h-[400px] w-full">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <LineChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
-                                    <XAxis
-                                        dataKey="date"
-                                        stroke="#94a3b8"
-                                        tickFormatter={(val) => val.substring(0, 4)} // Show Year
-                                        minTickGap={50}
-                                    />
-                                    <YAxis
-                                        stroke="#94a3b8"
-                                        domain={['auto', 'auto']}
-                                        tickFormatter={(val) => `K${val}`}
-                                    />
-                                    <Tooltip
-                                        contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#f1f5f9' }}
-                                        labelStyle={{ color: '#94a3b8', marginBottom: '0.5rem' }}
-                                        formatter={(val: any) => [`K${Number(val).toFixed(2)}`, 'Price']}
-                                    />
-                                    <Legend />
-                                    {/* History Line */}
-                                    <Line
-                                        name="Historical"
-                                        type="monotone"
-                                        dataKey="history"
-                                        stroke="#10b981"
-                                        strokeWidth={2}
-                                        dot={false}
-                                        activeDot={{ r: 6 }}
-                                    />
-                                    {/* Prediction Line */}
-                                    <Line
-                                        name="Prediction"
-                                        type="monotone"
-                                        dataKey="prediction"
-                                        stroke="#818cf8"
-                                        strokeWidth={2}
-                                        strokeDasharray="5 5"
-                                        dot={false}
-                                        connectNulls={true}
-                                    />
-                                </LineChart>
-                            </ResponsiveContainer>
-                        </div>
-                        <div className="mt-2 flex items-start gap-2 text-xs text-slate-500 bg-blue-500/5 p-2 rounded border border-blue-500/10">
+                        {loading ? (
+                            <div className="h-[350px] flex items-center justify-center">
+                                <div className="text-center">
+                                    <Loader2 className="w-8 h-8 animate-spin text-brand-primary mx-auto mb-2" />
+                                    <p className="text-sm text-slate-400">Loading historical data...</p>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="h-[350px] w-full">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <LineChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                                        <XAxis
+                                            dataKey="date"
+                                            stroke="#94a3b8"
+                                            tickFormatter={(val) => {
+                                                const d = new Date(val);
+                                                return `${d.toLocaleString('default', { month: 'short' })} '${d.getFullYear().toString().slice(-2)}`;
+                                            }}
+                                            minTickGap={40}
+                                            fontSize={11}
+                                        />
+                                        <YAxis
+                                            stroke="#94a3b8"
+                                            domain={['auto', 'auto']}
+                                            tickFormatter={(val) => `K${val.toFixed(0)}`}
+                                            fontSize={11}
+                                        />
+                                        <Tooltip
+                                            contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#f1f5f9' }}
+                                            labelStyle={{ color: '#94a3b8', marginBottom: '0.5rem' }}
+                                            labelFormatter={(label) => new Date(label).toLocaleDateString('en-ZM', { year: 'numeric', month: 'long', day: 'numeric' })}
+                                            formatter={(val) => [`K${Number(val).toFixed(2)}`]}
+                                        />
+                                        <Legend />
+                                        {/* History Line */}
+                                        <Line
+                                            name="Historical"
+                                            type="monotone"
+                                            dataKey="history"
+                                            stroke="#10b981"
+                                            strokeWidth={2}
+                                            dot={false}
+                                            activeDot={{ r: 5, fill: '#10b981' }}
+                                        />
+                                        {/* Prediction Line */}
+                                        <Line
+                                            name="Forecast"
+                                            type="monotone"
+                                            dataKey="prediction"
+                                            stroke="#818cf8"
+                                            strokeWidth={2}
+                                            strokeDasharray="5 5"
+                                            dot={false}
+                                            activeDot={{ r: 5, fill: '#818cf8' }}
+                                            connectNulls={true}
+                                        />
+                                    </LineChart>
+                                </ResponsiveContainer>
+                            </div>
+                        )}
+
+                        <div className="mt-3 flex items-start gap-2 text-xs text-slate-500 bg-blue-500/5 p-2 rounded border border-blue-500/10">
                             <AlertCircle className="w-4 h-4 flex-shrink-0 text-blue-400/70" />
                             <p>
-                                Prediction is generated using a linear trend extrapolation with Monte Carlo noise simulation.
+                                Forecast is generated using trend extrapolation with Monte Carlo simulation.
                                 Not financial advice. Past performance does not guarantee future results.
                             </p>
                         </div>
