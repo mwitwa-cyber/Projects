@@ -101,7 +101,7 @@ def get_securities(db: Session = Depends(get_db)):
 @cache(expire=60)
 def get_ohlc_data(
     ticker: str,
-    days: int = Query(default=1, ge=1, le=365, description="Number of days (1-365)"),
+    days: int = Query(default=1, ge=1, le=1825, description="Number of days (1-1825, ~5 years)"),
     db: Session = Depends(get_db)
 ):
     """
@@ -111,8 +111,8 @@ def get_ohlc_data(
     from datetime import datetime, timedelta
     import re
     
-    # Validate ticker format (alphanumeric only, max 10 chars)
-    if not re.match(r'^[A-Za-z0-9]{1,10}$', ticker):
+    # Validate ticker format (alphanumeric and hyphens, max 15 chars)
+    if not re.match(r'^[A-Za-z0-9-]{1,15}$', ticker):
         from fastapi import HTTPException
         raise HTTPException(status_code=400, detail="Invalid ticker format")
     

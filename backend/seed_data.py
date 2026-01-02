@@ -61,7 +61,6 @@ def seed():
         # Industrial
         {"ticker": "CHIL", "name": "Chilanga Cement Plc", "sector": "Industrials", "price": 80.00},
         {"ticker": "ZMFA", "name": "Metal Fabricators of Zambia Plc", "sector": "Engineering", "price": 60.00},
-        {"ticker": "FQMZ", "name": "First Quantum Minerals Zambia", "sector": "Basic Materials", "price": 12.85},
         
         # Retail
         {"ticker": "SHOP", "name": "Shoprite Holdings Zambia", "sector": "Retail", "price": 350.00},
@@ -111,18 +110,14 @@ def seed():
     print("Seeding Price History...")
     start_date = date.today() - timedelta(days=365)
     
-    # Base prices as of 1 year ago (January 2025) - realistic LuSE historical values
-    # Calculated based on current prices and LASI YTD performance (+67.86%)
-    # These will drift toward current prices over the simulation period
     # Base prices as of 1 year ago (January 2025) - calculated from current prices
-    # Current prices from AfricanFinancials.com (Dec 31, 2025)
-    # 1-year returns: LASI +67.86%, so base = current / (1 + growth_rate)
+    # Current prices from AfricanFinancials.com (Jan 2, 2026)
+    # LASI: 25,919.83 (+0.86% daily change)
     base_prices = {
         # Mining & Investment (High growth sector)
         "ZCCM": 98.89,      # ZCCM-IH (current: K166.00, +68%)
         "AECI": 77.44,      # AECI Mining Explosives (current: K130.00, +68%)
         "ZFCO": 2.13,       # ZAFFICO (current: K3.57, +68%)
-        "FQMZ": 7.65,       # First Quantum (current: K12.85, +68%)
         
         # Telecommunications & Technology (High growth)
         "ATEL": 43.50,      # Airtel Networks Zambia (current: K137.73, +217%)
@@ -178,7 +173,7 @@ def seed():
         "High": ["CECZ", "ATEL", "ZNCO", "SCBL", "ZCCM", "ZSUG", "ZMBF", "CHIL", "SHOP",
                  "GRZ-2Y", "GRZ-3Y", "GRZ-5Y", "GRZ-10Y", "GRZ-15Y"],
         # Medium liquidity (K10M-K100M/year)
-        "Medium": ["AECI", "BATZ", "ZABR", "PUMA", "NATB", "ZMFA", "REIZ", "FQMZ"],
+        "Medium": ["AECI", "BATZ", "ZABR", "PUMA", "NATB", "ZMFA", "REIZ"],
         # Low liquidity (<K10M/year)
         "Low": ["BATA", "MAFS", "ZMRE", "ZFCO", "DCZM", "PMDZ", "CCAF"]
     }

@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Activity, DollarSign, Loader2, Download } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Activity, DollarSign, Loader2, Download, FileSpreadsheet, ChevronDown } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { cn } from '../lib/utils';
 
@@ -97,6 +97,57 @@ export const MarketPulse = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [downloading, setDownloading] = useState(false);
+    const [downloadingSpreadsheet, setDownloadingSpreadsheet] = useState(false);
+    const [exportMenuOpen, setExportMenuOpen] = useState(false);
+    const exportMenuRef = useRef<HTMLDivElement>(null);
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (exportMenuRef.current && !exportMenuRef.current.contains(event.target as Node)) {
+                setExportMenuOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const handleDownloadSpreadsheet = () => {
+        try {
+            setDownloadingSpreadsheet(true);
+
+            // Create CSV content from securities data
+            const headers = ['Ticker', 'Name', 'Sector', 'Price (ZMW)', 'Change', 'Change %'];
+            const rows = securities.map(s => [
+                s.ticker,
+                s.name,
+                s.sector,
+                s.price?.toFixed(2) ?? 'N/A',
+                (s.change ?? 0).toFixed(2),
+                `${((s as any).change_percent ?? 0).toFixed(2)}%`
+            ]);
+
+            const csvContent = [
+                headers.join(','),
+                ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+            ].join('\n');
+
+            // Create and download the file
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `LuSE_Market_Data_${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        } catch (err) {
+            console.error('Spreadsheet export failed:', err);
+        } finally {
+            setDownloadingSpreadsheet(false);
+        }
+    };
 
     const handleDownloadReport = async () => {
         try {
@@ -190,17 +241,47 @@ export const MarketPulse = () => {
                     <p className="text-brand-secondary mt-1">Real-time Bitemporal Data Stream</p>
                 </div>
                 <div className="flex gap-4">
-                    <button
-                        onClick={handleDownloadReport}
-                        disabled={downloading}
-                        className="flex items-center gap-2 px-3 py-2 bg-brand-primary/10 hover:bg-brand-primary/20 text-brand-primary rounded-lg text-sm transition-colors border border-brand-primary/20"
-                    >
-                        {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                        Export PDF
-                    </button>
+                    {/* Export Dropdown */}
+                    <div className="relative" ref={exportMenuRef}>
+                        <button
+                            onClick={() => setExportMenuOpen(!exportMenuOpen)}
+                            className="flex items-center gap-2 px-3 py-2 bg-brand-primary/10 hover:bg-brand-primary/20 text-brand-primary rounded-lg text-sm transition-colors border border-brand-primary/20"
+                        >
+                            <Download className="w-4 h-4" />
+                            Export
+                            <ChevronDown className={cn("w-4 h-4 transition-transform", exportMenuOpen && "rotate-180")} />
+                        </button>
+
+                        {exportMenuOpen && (
+                            <div className="absolute right-0 mt-2 w-48 bg-slate-800 border border-white/10 rounded-lg shadow-xl z-50 overflow-hidden">
+                                <button
+                                    onClick={() => {
+                                        handleDownloadReport();
+                                        setExportMenuOpen(false);
+                                    }}
+                                    disabled={downloading}
+                                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-200 hover:bg-white/10 transition-colors disabled:opacity-50"
+                                >
+                                    {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4 text-brand-primary" />}
+                                    <span>Export as PDF</span>
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        handleDownloadSpreadsheet();
+                                        setExportMenuOpen(false);
+                                    }}
+                                    disabled={downloadingSpreadsheet}
+                                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-200 hover:bg-white/10 transition-colors disabled:opacity-50 border-t border-white/5"
+                                >
+                                    {downloadingSpreadsheet ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileSpreadsheet className="w-4 h-4 text-emerald-400" />}
+                                    <span>Export as CSV</span>
+                                </button>
+                            </div>
+                        )}
+                    </div>
                     <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-lg border border-white/10">
                         <Activity className="w-4 h-4 text-brand-primary" />
-                        <span className="text-sm font-mono">LASI: 6,420.21 (+0.4%)</span>
+                        <span className="text-sm font-mono">LASI: 25,919.83 (+0.86%)</span>
                     </div>
                 </div>
             </header>

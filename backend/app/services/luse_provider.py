@@ -20,7 +20,6 @@ AFRICANFINANCIALS_TICKER_MAP = {
     "CECZ": "zm-cec",
     "CHIL": "zm-chil",
     "DCZM": "zm-dcz",
-    "FQMZ": "zm-fqm",
     "MAFS": "zm-mafs",
     "NATB": "zm-natb",
     "PMDZ": "zm-pmdz",

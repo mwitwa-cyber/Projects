@@ -130,64 +130,70 @@ async def generate_frontier(request: EfficientFrontierRequest):
 
 
 from fastapi import Query, Body
+from pydantic import BaseModel, Field
+
+class VaRRequest(BaseModel):
+    returns: List[float] = Field(..., description="Return series")
+    confidence_level: float = Field(default=0.95, ge=0.90, le=0.99, description="Confidence level")
+    method: str = Field(default="historical", description="VaR method: historical, parametric, or monte_carlo")
 
 @router.post("/risk/var")
-async def calculate_var(
-    returns: List[float] = Body(..., description="Return series"),
-    confidence_level: float = Query(0.99, ge=0.90, le=0.99, description="Confidence level"),
-    method: str = Query("historical", description="VaR method")
-):
+async def calculate_var(request: VaRRequest):
     """Calculate Value at Risk (VaR)."""
     try:
-        returns_series = pd.Series(returns)
+        returns_series = pd.Series(request.returns)
         
         if len(returns_series) < 30:
             raise ValueError("Minimum 30 observations required for VaR")
         
         var = RiskMetrics.value_at_risk(
             returns_series,
-            confidence_level=confidence_level,
-            method=method
+            confidence_level=request.confidence_level,
+            method=request.method
         )
         
         return {
             "var": round(var, 6),
-            "confidence_level": confidence_level,
-            "method": method,
-            "interpretation": f"{confidence_level*100}% confidence that loss will not exceed {var:.2%}"
+            "var_value": round(var, 6),
+            "confidence_level": request.confidence_level,
+            "method": request.method,
+            "interpretation": f"{request.confidence_level*100}% confidence that loss will not exceed {var:.2%}"
         }
     
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
+class CVaRRequest(BaseModel):
+    returns: List[float] = Field(..., description="Return series")
+    confidence_level: float = Field(default=0.95, ge=0.90, le=0.99, description="Confidence level")
+    method: str = Field(default="historical", description="CVaR method: historical or parametric")
+
 @router.post("/risk/cvar")
-async def calculate_cvar(
-    returns: List[float] = Body(..., description="Return series"),
-    confidence_level: float = Query(0.99, ge=0.90, le=0.99, description="Confidence level")
-):
+async def calculate_cvar(request: CVaRRequest):
     """Calculate Conditional VaR (Expected Shortfall)."""
     try:
-        returns_series = pd.Series(returns)
+        returns_series = pd.Series(request.returns)
         
         if len(returns_series) < 30:
             raise ValueError("Minimum 30 observations required")
         
         cvar = RiskMetrics.conditional_var(
             returns_series,
-            confidence_level=confidence_level
+            confidence_level=request.confidence_level
         )
         
         var = RiskMetrics.value_at_risk(
             returns_series,
-            confidence_level=confidence_level,
+            confidence_level=request.confidence_level,
             method="historical"
         )
         
         return {
             "cvar": round(cvar, 6),
+            "cvar_value": round(cvar, 6),
             "var": round(var, 6),
-            "confidence_level": confidence_level,
+            "confidence_level": request.confidence_level,
             "interpretation": f"Expected loss when loss exceeds VaR: {cvar:.2%}"
         }
     

@@ -131,29 +131,58 @@ class MarketDataService:
 
     def get_ohlc_data(self, ticker: str, start_date: datetime) -> list[dict]:
         """
-        Queries the continuous aggregate view `ohlc_1min` for OHLC data.
+        Queries OHLC data for a ticker. Falls back to market_prices if ohlc_1min doesn't exist.
         """
         from sqlalchemy import text
+        from sqlalchemy.exc import ProgrammingError
         
-        query = text("""
-            SELECT bucket, open, high, low, close, volume
-            FROM ohlc_1min
-            WHERE security_ticker = :ticker
-            AND bucket >= :start_date
-            ORDER BY bucket ASC
-        """)
+        # Try the ohlc_1min continuous aggregate first
+        try:
+            query = text("""
+                SELECT bucket, open, high, low, close, volume
+                FROM ohlc_1min
+                WHERE security_ticker = :ticker
+                AND bucket >= :start_date
+                ORDER BY bucket ASC
+            """)
+            
+            result = self.db.execute(query, {"ticker": ticker, "start_date": start_date})
+            
+            data = []
+            for row in result:
+                data.append({
+                    "time": row.bucket.isoformat(),
+                    "open": row.open,
+                    "high": row.high,
+                    "low": row.low,
+                    "close": row.close,
+                    "volume": row.volume
+                })
+                
+            return data
+        except ProgrammingError:
+            # ohlc_1min table doesn't exist, fall back to market_prices
+            self.db.rollback()
+            pass
         
-        result = self.db.execute(query, {"ticker": ticker, "start_date": start_date})
+        # Fallback: Use market_prices table (daily prices)
+        # Construct OHLC-like data from daily prices
+        prices = self.db.query(MarketPrice).filter(
+            MarketPrice.security_ticker == ticker,
+            MarketPrice.valid_from >= start_date.date() if isinstance(start_date, datetime) else start_date,
+            MarketPrice.transaction_to == None
+        ).order_by(MarketPrice.valid_from.asc()).all()
         
         data = []
-        for row in result:
+        for price in prices:
+            # For daily data, open/high/low/close are the same
             data.append({
-                "time": row.bucket.isoformat(), # TradingView lightweight charts prefer ISO or unix
-                "open": row.open,
-                "high": row.high,
-                "low": row.low,
-                "close": row.close,
-                "volume": row.volume
+                "time": price.valid_from.strftime("%Y-%m-%d") if hasattr(price.valid_from, 'strftime') else str(price.valid_from),
+                "open": price.price,
+                "high": price.price,
+                "low": price.price,
+                "close": price.price,
+                "volume": price.volume or 0
             })
             
         return data

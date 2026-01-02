@@ -99,6 +99,9 @@
 - Live price changes
 - Mini price charts
 - Market depth visualization
+- **Export Dropdown Menu**:
+  - Export as PDF (market summary report)
+  - Export as CSV (spreadsheet with ticker data)
 
 ### 2. Bond Pricer Component
 - Face value input
