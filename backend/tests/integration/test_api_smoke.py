@@ -51,4 +51,4 @@ def test_portfolio_crud_endpoints():
 @pytest.mark.smoke
 def test_market_data_endpoint():
     resp = requests.get(f"{BASE_URL}/market-data/luse/latest")
-    assert resp.status_code in (200, 404)
+    assert resp.status_code == 200

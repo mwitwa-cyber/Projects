@@ -11,9 +11,9 @@ from typing import Optional, Dict
 
 class LUSEProvider(PriceProvider):
     """Provider for scraping data from the Lusaka Securities Exchange."""
-    def __init__(self, url="https://afx.kwayisi.org/zse/"):
+    def __init__(self, url="https://www.luse.co.zm/"):
         self.url = url
-        self.securities = ["ZCCM-IH", "Zanaco", "ZESCO", "Barclays"]  # Extend as needed
+        self.securities = ["AELZ", "AIRTEL", "BATA", "BATZ", "CCAF", "CEC", "REIZ", "MAFS", "PUMA", "SHOP", "SCBL", "ZCCM-IH", "ZMBF", "ZNCO", "ZSIC"]
         self.logger = logging.getLogger(__name__)
 
     def fetch_price(self, symbol: str) -> Optional[Dict[str, float]]:
@@ -36,8 +36,8 @@ class LUSEProvider(PriceProvider):
             for row in table.find_all("tr")[1:]:
                 cols = row.find_all("td")
                 if len(cols) >= 5 and cols[0].text.strip() == symbol:
-                    price = float(cols[1].text.replace(",", ""))
-                    volume = int(cols[4].text.replace(",", ""))
+                    price = float(cols[2].text.replace(",", ""))
+                    volume = int(cols[5].text.replace(",", ""))
                     return {"price": price, "volume": volume}
 
             self.logger.warning(f"Symbol '{symbol}' not found in the LUSE data table.")
