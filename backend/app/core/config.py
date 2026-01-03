@@ -52,6 +52,17 @@ class Settings(BaseSettings):
     MAX_PORTFOLIO_SIZE: int = 50
     OPTIMIZATION_SOLVER: str = "ECOS"  # ECOS, OSQP, SCS
     
+    # Risk Calculation Settings
+    RISK_CALCULATION_HOUR: int = 18  # 6 PM - after market close
+    RISK_CALCULATION_MINUTE: int = 30
+    DEFAULT_LOOKBACK_DAYS: int = 365
+    MIN_OBSERVATIONS_REQUIRED: int = 20  # Minimum weekly data points
+    BENCHMARK_ASSET_ID: int = 1  # LASI index proxy
+    
+    # Celery
+    CELERY_BROKER_URL: str = "redis://redis:6379/0"
+    CELERY_RESULT_BACKEND: str = "redis://redis:6379/0"
+    
     @field_validator('SECRET_KEY')
     @classmethod
     def validate_secret_key(cls, v: str, info) -> str:

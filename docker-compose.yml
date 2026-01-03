@@ -1,9 +1,9 @@
 
 services:
-  celery:
+  celery_worker:
     build: ./backend
-    container_name: luse_celery
-    command: celery -A app.tasks worker --beat --scheduler django --loglevel=info
+    container_name: luse_celery_worker
+    command: celery -A app.tasks.celery_app worker --loglevel=info --concurrency=2
     volumes:
       - ./backend:/app
     environment:
@@ -13,6 +13,38 @@ services:
     depends_on:
       - db
       - redis
+    restart: unless-stopped
+
+  celery_beat:
+    build: ./backend
+    container_name: luse_celery_beat
+    command: celery -A app.tasks.celery_app beat --loglevel=info
+    volumes:
+      - ./backend:/app
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@db:5432/luse_quant
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    depends_on:
+      - db
+      - redis
+      - celery_worker
+    restart: unless-stopped
+
+  flower:
+    build: ./backend
+    container_name: luse_flower
+    command: celery -A app.tasks.celery_app flower --port=5555
+    ports:
+      - "5555:5555"
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    depends_on:
+      - redis
+      - celery_worker
+    restart: unless-stopped
+
   workspace:
     build: .
     container_name: antigravity_workspace
