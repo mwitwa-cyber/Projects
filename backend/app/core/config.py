@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     API_V1_PREFIX: str = "/api/v1"
     CORS_ORIGINS: List[str] = [
         "http://localhost:5173", 
+        "http://localhost:5174",
         "http://localhost:3000", 
         "http://localhost", 
         "http://localhost:80", 
@@ -62,6 +63,11 @@ class Settings(BaseSettings):
     # Celery
     CELERY_BROKER_URL: str = "redis://redis:6379/0"
     CELERY_RESULT_BACKEND: str = "redis://redis:6379/0"
+    
+    # Market Data Scraper
+    ENABLE_SCRAPER: bool = True  # Enable background price fetching
+    SCRAPER_PROVIDER: str = "luse"  # Use LuSE/AfricanFinancials provider
+    SCRAPER_INTERVAL: int = 3600  # Fetch every hour (3600 seconds)
     
     @field_validator('SECRET_KEY')
     @classmethod

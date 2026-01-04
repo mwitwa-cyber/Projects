@@ -1,20 +1,19 @@
 import { useState, useEffect } from 'react';
-import { Activity, Zap, BarChart3, AlertCircle, Loader2, Shield } from 'lucide-react';
+import { Activity, Zap, BarChart3, AlertCircle, Loader2, Settings, TrendingUp } from 'lucide-react';
 import { MarketPulse } from './MarketPulse';
 import { BondPricer } from './BondPricer';
 import { PortfolioOptimizer } from './PortfolioOptimizer';
 import { RiskAnalyzer } from './RiskAnalyzer';
-import { TOTPSetup } from './Auth/TOTPSetup';
+import { AdvancedAnalytics } from './AdvancedAnalytics';
+import { SettingsPage } from './Settings/SettingsPage';
 import { healthCheck } from '../services/api';
 import { authService } from '../services/authService';
-import { useNavigate } from 'react-router-dom';
 
-type TabType = 'market' | 'bond' | 'portfolio' | 'risk' | 'profile';
+type TabType = 'market' | 'bond' | 'portfolio' | 'risk' | 'analytics' | 'settings';
 
 export function Dashboard() {
     const [activeTab, setActiveTab] = useState<TabType>('market');
     const [backendStatus, setBackendStatus] = useState<'checking' | 'online' | 'offline'>('checking');
-    const navigate = useNavigate();
     const user = authService.getCurrentUser();
 
     useEffect(() => {
@@ -33,17 +32,12 @@ export function Dashboard() {
         return () => clearInterval(interval);
     }, []);
 
-    const handleLogout = () => {
-        authService.logout();
-        navigate('/login');
-    };
-
     const tabs = [
         { id: 'market' as const, label: 'Market Pulse', icon: Activity },
         { id: 'bond' as const, label: 'Bond Pricing', icon: Zap },
         { id: 'portfolio' as const, label: 'Portfolio', icon: BarChart3 },
         { id: 'risk' as const, label: 'Risk Analysis', icon: AlertCircle },
-        { id: 'profile' as const, label: 'Security', icon: Shield },
+        { id: 'analytics' as const, label: 'Advanced Analytics', icon: TrendingUp },
     ];
 
     if (backendStatus === 'checking') {
@@ -77,11 +71,16 @@ export function Dashboard() {
                                 <div className={`w-2 h-2 rounded-full ${backendStatus === 'online' ? 'bg-fintech-success' : 'bg-fintech-error'} animate-pulse`} />
                                 {backendStatus === 'online' ? 'System Online' : 'System Offline'}
                             </div>
+                            {/* Settings Button */}
                             <button
-                                onClick={handleLogout}
-                                className="px-3 py-2 rounded-lg bg-fintech-card border border-fintech-border text-fintech-text-muted hover:text-fintech-error hover:border-fintech-error/50 text-sm font-medium transition-all"
+                                onClick={() => setActiveTab('settings')}
+                                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all border ${activeTab === 'settings'
+                                        ? 'bg-fintech-primary/10 border-fintech-primary text-fintech-primary'
+                                        : 'bg-fintech-card border-fintech-border text-fintech-text-muted hover:text-fintech-text-primary hover:border-fintech-primary/50'
+                                    }`}
                             >
-                                Logout ({user?.sub || 'User'})
+                                <Settings className="w-4 h-4" />
+                                {user?.sub || 'Settings'}
                             </button>
                         </div>
                     </div>
@@ -125,7 +124,8 @@ export function Dashboard() {
                     {activeTab === 'bond' && <BondPricer />}
                     {activeTab === 'portfolio' && <PortfolioOptimizer />}
                     {activeTab === 'risk' && <RiskAnalyzer />}
-                    {activeTab === 'profile' && <TOTPSetup />}
+                    {activeTab === 'analytics' && <AdvancedAnalytics />}
+                    {activeTab === 'settings' && <SettingsPage />}
                 </div>
             </main>
 

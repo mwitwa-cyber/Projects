@@ -2,7 +2,6 @@ import os
 import asyncio
 import random
 import time
-from abc import ABC, abstractmethod
 from datetime import date, datetime
 from typing import Optional, List, Dict
 
@@ -12,7 +11,9 @@ import requests
 from app.core.db import SessionLocal
 from app.services.market_data import MarketDataService
 from app.core.models import Security
-from app.services.luse_provider import LUSEProvider
+
+# Import base class + LuSE provider - avoid circular imports
+from app.services.luse_provider import PriceProvider, LUSEProvider
 
 
 # ============ CURRENCY CONVERSION ============
@@ -33,15 +34,7 @@ def convert_to_zmw(ticker: str, price: float) -> float:
     return price
 
 
-# ============ PROVIDER STRATEGY PATTERN ============
-
-class PriceProvider(ABC):
-    """Base class for market-data providers."""
-
-    @abstractmethod
-    def fetch_price(self, symbol: str) -> Optional[Dict[str, float]]:
-        """Fetch price and volume for a symbol. Return {price, volume} or None."""
-        pass
+# ============ PROVIDER IMPLEMENTATIONS ============
 
 
 class SimulatorProvider(PriceProvider):

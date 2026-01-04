@@ -34,6 +34,7 @@ export interface CAPMResponse {
     liquidity_premium: number;
     average_dollar_volume: number;
     r_squared: number;
+    alpha: number;
 }
 
 // Risk Metrics Types
@@ -45,6 +46,8 @@ export interface RiskMetrics {
     asset_id: number;
     benchmark_id: number;
     lookback_days: number;
+    cvar_95?: number;
+    volatility_annual?: number;
 }
 
 export interface RiskMetricsHistory {

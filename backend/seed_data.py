@@ -192,9 +192,23 @@ def seed():
             prob = get_liquidity(ticker)
             
             if random.random() < prob:
-                # Random walk
-                change = random.uniform(-0.03, 0.035) # Slight upward drift
-                current_prices[ticker] = max(0.01, current_prices[ticker] * (1 + change))
+                if ticker.startswith("GRZ"):
+                    # Bonds: Mean reversion to keep prices realistic (80-100)
+                    # Target price inversely related to yield/maturity roughly
+                    try:
+                        years = int(ticker.split('-')[1].replace('Y',''))
+                        target_price = 100 - (years * 1.5) # e.g. 2Y -> 97, 15Y -> 77.5
+                    except:
+                        target_price = 90
+                    
+                    # Mean reversion + small noise
+                    diff = target_price - current_prices[ticker]
+                    change = diff * 0.05 + random.gauss(0, 0.5)
+                    current_prices[ticker] = max(0.01, current_prices[ticker] + change)
+                else:
+                    # Equities: Random walk with much smaller drift
+                    change = random.uniform(-0.02, 0.021) # Reduced volatility
+                    current_prices[ticker] = max(0.01, current_prices[ticker] * (1 + change))
                 
                 # Volume simulation based on liquidity
                 base_vol = 1000 if prob > 0.5 else 100

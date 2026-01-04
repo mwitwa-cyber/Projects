@@ -71,6 +71,17 @@ class MarketDataService:
              
         return query.first()
 
+    def get_latest_price_before(self, ticker: str, as_of_date: date):
+        """
+        Get the latest known valid price on or before `as_of_date`.
+        Handles sparse data: if no price today, get yesterday's, etc.
+        """
+        return self.db.query(MarketPrice).filter(
+            MarketPrice.security_ticker == ticker,
+            MarketPrice.valid_from <= as_of_date,
+            MarketPrice.transaction_to == None
+        ).order_by(MarketPrice.valid_from.desc()).first()
+
     def get_market_summary(self, valid_date: date):
         """
         Returns a summary of all securities with their latest price, percentage change,

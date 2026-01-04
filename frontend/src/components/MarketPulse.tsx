@@ -1,20 +1,12 @@
-import { useState, useEffect, useRef } from 'react';
-import { Activity, DollarSign, Loader2, Download, FileSpreadsheet, ChevronDown } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { Activity, DollarSign, Loader2, Download, FileSpreadsheet, ChevronDown, TrendingUp, TrendingDown, Info, BarChart3 } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
 import { cn } from '../lib/utils';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 
 
 
-
-const mockData = [
-    { name: '9:00', value: 400 },
-    { name: '10:00', value: 300 },
-    { name: '11:00', value: 450 },
-    { name: '12:00', value: 470 },
-    { name: '13:00', value: 400 },
-    { name: '14:00', value: 300 },
-    { name: '15:00', value: 400 },
-];
 
 const TickerCard = ({ ticker, name, price, change, sector, history, onClick }: { ticker: string, name: string, price: number, change: number, sector: string, history: any[], onClick: () => void }) => (
     <div
@@ -116,9 +108,24 @@ export const MarketPulse = () => {
         try {
             setDownloadingSpreadsheet(true);
 
-            // Create CSV content from securities data
+            // Create CSV content with Summary Section
+            const dateStr = new Date().toISOString().split('T')[0];
+            const summaryRows = [
+                ['LuSE Market Pulse Report'],
+                [`Generated: ${dateStr}`],
+                [''],
+                ['MARKET SUMMARY'],
+                ['Market Status', marketStats ? (marketStats.advanceDeclineRatio >= 1 ? 'Bullish' : 'Bearish') : 'N/A'],
+                ['Gainers', marketStats?.gainersCount ?? 0],
+                ['Losers', marketStats?.losersCount ?? 0],
+                ['Unchanged', marketStats?.unchangedCount ?? 0],
+                ['Advance/Decline Ratio', marketStats?.advanceDeclineRatio.toFixed(2) ?? '0.00'],
+                [''],
+                ['SECURITIES DATA']
+            ];
+
             const headers = ['Ticker', 'Name', 'Sector', 'Price (ZMW)', 'Change', 'Change %'];
-            const rows = securities.map(s => [
+            const dataRows = securities.map(s => [
                 s.ticker,
                 s.name,
                 s.sector,
@@ -128,8 +135,9 @@ export const MarketPulse = () => {
             ]);
 
             const csvContent = [
+                ...summaryRows.map(row => row.map(cell => `"${cell}"`).join(',')),
                 headers.join(','),
-                ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+                ...dataRows.map(row => row.map(cell => `"${cell}"`).join(','))
             ].join('\n');
 
             // Create and download the file
@@ -137,40 +145,49 @@ export const MarketPulse = () => {
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `LuSE_Market_Data_${new Date().toISOString().split('T')[0]}.csv`;
+            a.download = `LuSE_Market_Data_${dateStr}.csv`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
             window.URL.revokeObjectURL(url);
         } catch (err) {
             console.error('Spreadsheet export failed:', err);
+            setError('Failed to export CSV');
+            setTimeout(() => setError(''), 3000);
         } finally {
             setDownloadingSpreadsheet(false);
         }
     };
 
-    const handleDownloadReport = async () => {
+    const handleDownloadPDF = async () => {
         try {
             setDownloading(true);
-            const token = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!).access_token : null;
-            const response = await fetch('http://localhost:8000/api/v1/reports/market-summary', {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
+            const element = document.getElementById('market-pulse-container');
+            if (!element) throw new Error('Element not found');
+
+            // Capture the element
+            const canvas = await html2canvas(element, {
+                scale: 2, // High resolution
+                useCORS: true,
+                logging: false,
+                backgroundColor: '#0f172a' // Ensure background color matches brand-dark
             });
 
-            if (!response.ok) throw new Error('Download failed');
+            // Generate PDF
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF({
+                orientation: 'landscape',
+                unit: 'px',
+                format: [canvas.width / 2, canvas.height / 2] // Scale down to fit standard view size but keep ratio
+            });
 
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `LuSE_Market_Report_${new Date().toISOString().split('T')[0]}.pdf`;
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
+            pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 2, canvas.height / 2);
+            pdf.save(`LuSE_Market_Pulse_${new Date().toISOString().split('T')[0]}.pdf`);
+
         } catch (err) {
-            console.error(err);
+            console.error('PDF export failed:', err);
+            setError('Failed to generate PDF report');
+            setTimeout(() => setError(''), 3000);
         } finally {
             setDownloading(false);
         }
@@ -217,6 +234,55 @@ export const MarketPulse = () => {
         loadMarketData();
     }, []);
 
+    // Calculated market statistics
+    const marketStats = useMemo(() => {
+        if (securities.length === 0) return null;
+
+        const gainers = securities.filter(s => (s.change ?? 0) > 0);
+        const losers = securities.filter(s => (s.change ?? 0) < 0);
+        const unchanged = securities.filter(s => (s.change ?? 0) === 0);
+
+        const sortedByChange = [...securities].sort((a, b) => (b.change ?? 0) - (a.change ?? 0));
+        const topGainers = sortedByChange.slice(0, 3).filter(s => (s.change ?? 0) > 0);
+        const topLosers = sortedByChange.slice(-3).filter(s => (s.change ?? 0) < 0).reverse();
+
+        // Calculate sector performance
+        const sectorPerf: Record<string, { total: number; count: number }> = {};
+        securities.forEach(s => {
+            if (!sectorPerf[s.sector]) {
+                sectorPerf[s.sector] = { total: 0, count: 0 };
+            }
+            sectorPerf[s.sector].total += (s.change ?? 0);
+            sectorPerf[s.sector].count += 1;
+        });
+
+        const sectorData = Object.entries(sectorPerf).map(([sector, data]) => ({
+            sector,
+            avgChange: data.total / data.count,
+        })).sort((a, b) => b.avgChange - a.avgChange);
+
+        return {
+            totalSecurities: securities.length,
+            gainersCount: gainers.length,
+            losersCount: losers.length,
+            unchangedCount: unchanged.length,
+            topGainers,
+            topLosers,
+            sectorData,
+            advanceDeclineRatio: losers.length > 0 ? gainers.length / losers.length : gainers.length,
+        };
+    }, [securities]);
+
+    // Market breadth data for visualization
+    const breadthData = useMemo(() => {
+        if (!marketStats) return [];
+        return [
+            { name: 'Gainers', value: marketStats.gainersCount, fill: '#10b981' },
+            { name: 'Losers', value: marketStats.losersCount, fill: '#f43f5e' },
+            { name: 'Unchanged', value: marketStats.unchangedCount, fill: '#64748b' },
+        ];
+    }, [marketStats]);
+
     if (loading) {
         return (
             <div className="min-h-screen bg-brand-dark flex items-center justify-center text-white">
@@ -234,8 +300,8 @@ export const MarketPulse = () => {
     }
 
     return (
-        <div className="p-6 space-y-8 animate-in fade-in duration-700 bg-brand-dark min-h-screen text-slate-100 font-sans">
-            <header className="flex justify-between items-center mb-8">
+        <div id="market-pulse-container" className="p-6 space-y-8 animate-in fade-in duration-700 bg-brand-dark min-h-screen text-slate-100 font-sans">
+            <header className="flex justify-between items-center mb-0">
                 <div>
                     <h1 className="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-brand-primary to-emerald-400 bg-clip-text text-transparent">LuSE Market Pulse</h1>
                     <p className="text-brand-secondary mt-1">Real-time Bitemporal Data Stream</p>
@@ -256,7 +322,7 @@ export const MarketPulse = () => {
                             <div className="absolute right-0 mt-2 w-48 bg-slate-800 border border-white/10 rounded-lg shadow-xl z-50 overflow-hidden">
                                 <button
                                     onClick={() => {
-                                        handleDownloadReport();
+                                        handleDownloadPDF();
                                         setExportMenuOpen(false);
                                     }}
                                     disabled={downloading}
@@ -286,10 +352,178 @@ export const MarketPulse = () => {
                 </div>
             </header>
 
+            {/* Market Summary Section (Breadth & Movers) - Moved to Top */}
+            <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Market Breadth & Sector Performance */}
+                <div className="lg:col-span-2 bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-semibold flex items-center gap-2">
+                            <BarChart3 className="w-5 h-5 text-blue-400" />
+                            Market Breadth & Sector Performance
+                        </h3>
+                        <div className="flex items-center gap-2">
+                            <Info className="w-4 h-4 text-slate-400" />
+                            <span className="text-xs text-slate-400">Shows market health at a glance</span>
+                        </div>
+                    </div>
+
+                    {marketStats && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Market Breadth Summary */}
+                            <div className="space-y-4">
+                                <div className="grid grid-cols-3 gap-3">
+                                    <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-3 text-center">
+                                        <div className="text-2xl font-bold text-emerald-400">{marketStats.gainersCount}</div>
+                                        <div className="text-xs text-emerald-300">Gainers</div>
+                                    </div>
+                                    <div className="bg-rose-500/10 border border-rose-500/30 rounded-lg p-3 text-center">
+                                        <div className="text-2xl font-bold text-rose-400">{marketStats.losersCount}</div>
+                                        <div className="text-xs text-rose-300">Losers</div>
+                                    </div>
+                                    <div className="bg-slate-500/10 border border-slate-500/30 rounded-lg p-3 text-center">
+                                        <div className="text-2xl font-bold text-slate-400">{marketStats.unchangedCount}</div>
+                                        <div className="text-xs text-slate-300">Unchanged</div>
+                                    </div>
+                                </div>
+
+                                {/* Advance/Decline Indicator */}
+                                <div className="bg-white/5 rounded-lg p-4">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <span className="text-sm text-slate-400">Advance/Decline Ratio</span>
+                                        <span className={cn(
+                                            "text-lg font-bold",
+                                            marketStats.advanceDeclineRatio >= 1 ? "text-emerald-400" : "text-rose-400"
+                                        )}>
+                                            {marketStats.advanceDeclineRatio.toFixed(2)}
+                                        </span>
+                                    </div>
+                                    <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+                                        <div
+                                            className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full"
+                                            style={{ width: `${(marketStats.gainersCount / marketStats.totalSecurities) * 100}%` }}
+                                        />
+                                    </div>
+                                    <p className="text-xs text-slate-500 mt-2">
+                                        {marketStats.advanceDeclineRatio >= 1
+                                            ? "✓ Bullish: More stocks advancing than declining"
+                                            : "⚠ Bearish: More stocks declining than advancing"}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Sector Performance Chart */}
+                            <div>
+                                <div className="text-sm text-slate-400 mb-2">Sector Performance (Avg. Change %)</div>
+                                <div className="h-48">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <BarChart data={marketStats.sectorData} layout="vertical">
+                                            <CartesianGrid strokeDasharray="3 3" stroke="#334155" horizontal={true} vertical={false} />
+                                            <XAxis type="number" stroke="#94a3b8" tickFormatter={(v) => `${v.toFixed(1)}%`} />
+                                            <YAxis dataKey="sector" type="category" stroke="#94a3b8" width={70} tick={{ fontSize: 11 }} />
+                                            <Tooltip
+                                                formatter={(value: number) => [`${value.toFixed(2)}%`, 'Avg Change']}
+                                                contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155' }}
+                                            />
+                                            <Bar dataKey="avgChange" radius={[0, 4, 4, 0]}>
+                                                {marketStats.sectorData.map((entry, index) => (
+                                                    <Cell
+                                                        key={`cell-${index}`}
+                                                        fill={entry.avgChange >= 0 ? '#10b981' : '#f43f5e'}
+                                                    />
+                                                ))}
+                                            </Bar>
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Top Movers */}
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
+                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <Activity className="w-5 h-5 text-purple-400" />
+                        Top Movers
+                    </h3>
+
+                    {marketStats && (
+                        <div className="space-y-4">
+                            {/* Top Gainers */}
+                            <div>
+                                <div className="text-xs text-emerald-400 uppercase tracking-wider mb-2 flex items-center gap-1">
+                                    <TrendingUp className="w-3 h-3" /> Top Gainers
+                                </div>
+                                <div className="space-y-2">
+                                    {marketStats.topGainers.length > 0 ? (
+                                        marketStats.topGainers.map((s, i) => (
+                                            <div
+                                                key={s.ticker}
+                                                onClick={() => setSelectedStock(s)}
+                                                className="flex justify-between items-center py-2 px-3 bg-emerald-500/5 border border-emerald-500/20 rounded-lg hover:bg-emerald-500/10 cursor-pointer transition"
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-emerald-400 font-bold text-sm">#{i + 1}</span>
+                                                    <span className="font-medium text-white">{s.ticker}</span>
+                                                </div>
+                                                <span className="text-emerald-400 font-mono text-sm">+{(s.change ?? 0).toFixed(2)}%</span>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="text-sm text-slate-500 text-center py-2">No gainers today</div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Top Losers */}
+                            <div>
+                                <div className="text-xs text-rose-400 uppercase tracking-wider mb-2 flex items-center gap-1">
+                                    <TrendingDown className="w-3 h-3" /> Top Losers
+                                </div>
+                                <div className="space-y-2">
+                                    {marketStats.topLosers.length > 0 ? (
+                                        marketStats.topLosers.map((s, i) => (
+                                            <div
+                                                key={s.ticker}
+                                                onClick={() => setSelectedStock(s)}
+                                                className="flex justify-between items-center py-2 px-3 bg-rose-500/5 border border-rose-500/20 rounded-lg hover:bg-rose-500/10 cursor-pointer transition"
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-rose-400 font-bold text-sm">#{i + 1}</span>
+                                                    <span className="font-medium text-white">{s.ticker}</span>
+                                                </div>
+                                                <span className="text-rose-400 font-mono text-sm">{(s.change ?? 0).toFixed(2)}%</span>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="text-sm text-slate-500 text-center py-2">No losers today</div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Insight */}
+                            <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 mt-4">
+                                <p className="text-xs text-blue-200">
+                                    <strong>💡 Insight:</strong> Top movers help identify momentum - gainers may indicate positive news or sector strength,
+                                    while losers may present value opportunities or signal caution.
+                                </p>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </section>
+
+            {/* Market Snapshot Section (Detailed List) - Moved to Bottom */}
             <section>
-                <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                    <DollarSign className="w-5 h-5 text-emerald-400" /> Market Snapshot
-                </h2>
+                <div className="flex items-center gap-3 mb-4">
+                    <h2 className="text-xl font-semibold flex items-center gap-2">
+                        <DollarSign className="w-5 h-5 text-emerald-400" /> Market Snapshot
+                    </h2>
+                    <span className="text-sm text-slate-400 bg-white/5 px-3 py-0.5 rounded-full">
+                        {securities.length} Securities Listed
+                    </span>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     {securities.length === 0 ? (
                         <div className="col-span-4 text-center text-brand-secondary">No market data available. Ensure backend is running and seeded.</div>
@@ -302,36 +536,6 @@ export const MarketPulse = () => {
                             />
                         ))
                     )}
-                </div>
-            </section>
-
-            <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
-                    <h3 className="text-lg font-semibold mb-6">LuSE All Share Index (LASI) Performance</h3>
-                    <div className="h-64 flex items-center justify-center text-brand-secondary">
-                        {/* Placeholder for Main Index Chart */}
-                        <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={mockData.map(d => ({ ...d, value: d.value * 1500 }))}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
-                                <XAxis dataKey="name" stroke="#94a3b8" />
-                                <YAxis stroke="#94a3b8" />
-                                <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155' }} />
-                                <Line type="monotone" dataKey="value" stroke="#0ea5e9" strokeWidth={3} activeDot={{ r: 8 }} />
-                            </LineChart>
-                        </ResponsiveContainer>
-                    </div>
-                </div>
-
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
-                    <h3 className="text-lg font-semibold mb-4">Market Depth</h3>
-                    <div className="space-y-4">
-                        {[1, 2, 3, 4, 5].map(i => (
-                            <div key={i} className="flex justify-between text-sm py-2 border-b border-white/5 last:border-0 hover:bg-white/5 px-2 rounded cursor-pointer">
-                                <span className="text-brand-secondary">10:4{i} AM</span>
-                                <span className="font-mono text-emerald-400">BUY 500 ZANACO @ K4.35</span>
-                            </div>
-                        ))}
-                    </div>
                 </div>
             </section>
 

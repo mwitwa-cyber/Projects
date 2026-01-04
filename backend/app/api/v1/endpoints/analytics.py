@@ -14,6 +14,20 @@ from app.services.analytics import (
 from app.models.risk_metrics import RiskMetricsHistory
 from pydantic import BaseModel
 
+# TimescaleDB-optimized risk calculations
+try:
+    from app.services.timescale_risk import (
+        get_beta_from_db,
+        get_var_from_db,
+        get_risk_metrics_hybrid,
+        check_timescale_functions_exist,
+        BetaResult,
+        VaRResult
+    )
+    TIMESCALE_AVAILABLE = True
+except ImportError:
+    TIMESCALE_AVAILABLE = False
+
 router = APIRouter()
 
 @router.get("/yield-curve")
@@ -249,3 +263,184 @@ def get_risk_metrics_history(
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ==================== TimescaleDB-Optimized Endpoints ====================
+
+@router.get("/timescale/beta/{asset_id}")
+def get_timescale_beta(
+    asset_id: int,
+    benchmark_id: int = Query(..., description="Benchmark asset ID (e.g., LASI proxy)"),
+    lookback_weeks: int = Query(52, ge=10, le=260, description="Lookback period in weeks"),
+    db: Session = Depends(get_db)
+):
+    """
+    Calculate Beta using TimescaleDB-optimized SQL functions.
+    
+    This endpoint offloads the heavy computation to the database,
+    making it faster for large datasets.
+    
+    - **asset_id**: Asset to analyze
+    - **benchmark_id**: Benchmark for beta calculation (e.g., LASI index proxy)
+    - **lookback_weeks**: Historical period (default: 52 weeks = 1 year)
+    
+    Returns:
+        - **beta**: Systematic risk coefficient
+        - **correlation**: Correlation with benchmark
+        - **asset_volatility**: Annualized volatility
+        - **observation_count**: Number of weekly observations
+    """
+    if not TIMESCALE_AVAILABLE:
+        raise HTTPException(
+            status_code=501,
+            detail="TimescaleDB risk functions not available"
+        )
+    
+    try:
+        result = get_beta_from_db(db, asset_id, benchmark_id, lookback_weeks)
+        return {
+            "asset_id": asset_id,
+            "benchmark_id": benchmark_id,
+            "lookback_weeks": lookback_weeks,
+            "beta": result.beta,
+            "correlation": result.correlation,
+            "observation_count": result.observation_count,
+            "asset_volatility": result.asset_volatility,
+            "benchmark_volatility": result.benchmark_volatility,
+            "calculation_method": "timescaledb"
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/timescale/var/{asset_id}")
+def get_timescale_var(
+    asset_id: int,
+    lookback_weeks: int = Query(52, ge=10, le=260, description="Lookback period in weeks"),
+    confidence: float = Query(0.95, ge=0.90, le=0.99, description="Confidence level"),
+    db: Session = Depends(get_db)
+):
+    """
+    Calculate Value at Risk (VaR) using TimescaleDB-optimized SQL functions.
+    
+    Uses historical simulation method with pre-aggregated weekly returns.
+    
+    - **asset_id**: Asset to analyze
+    - **lookback_weeks**: Historical period (default: 52 weeks)
+    - **confidence**: Confidence level (default: 95%)
+    
+    Returns:
+        - **var_95**: Value at Risk as percentage
+        - **cvar_95**: Conditional VaR (Expected Shortfall)
+        - **observation_count**: Number of observations used
+    """
+    if not TIMESCALE_AVAILABLE:
+        raise HTTPException(
+            status_code=501,
+            detail="TimescaleDB risk functions not available"
+        )
+    
+    try:
+        result = get_var_from_db(db, asset_id, lookback_weeks, confidence)
+        return {
+            "asset_id": asset_id,
+            "lookback_weeks": lookback_weeks,
+            "confidence_level": confidence,
+            "var": result.var_95,
+            "cvar": result.cvar_95,
+            "observation_count": result.observation_count,
+            "min_return": result.min_return,
+            "max_return": result.max_return,
+            "calculation_method": "timescaledb_historical",
+            "interpretation": f"{confidence*100:.0f}% confidence that weekly loss won't exceed {abs(result.var_95):.2f}%"
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/timescale/risk/{asset_id}")
+def get_timescale_risk_metrics(
+    asset_id: int,
+    benchmark_id: int = Query(..., description="Benchmark asset ID"),
+    lookback_weeks: int = Query(52, ge=10, le=260, description="Lookback period in weeks"),
+    db: Session = Depends(get_db)
+):
+    """
+    Calculate comprehensive risk metrics using TimescaleDB or Python fallback.
+    
+    Automatically uses the fastest available method:
+    1. TimescaleDB SQL functions (if installed)
+    2. Python pandas calculation (fallback)
+    
+    Returns combined Beta, VaR, volatility, and correlation metrics.
+    """
+    if not TIMESCALE_AVAILABLE:
+        # Fallback to Python calculation
+        try:
+            metrics = get_risk_metrics_sync(
+                db=db,
+                asset_id=asset_id,
+                benchmark_id=benchmark_id,
+                lookback_days=lookback_weeks * 7
+            )
+            return {
+                "asset_id": asset_id,
+                "benchmark_id": benchmark_id,
+                "lookback_weeks": lookback_weeks,
+                "beta": metrics.beta,
+                "var_95": metrics.var_95,
+                "observation_count": metrics.observation_count,
+                "calculation_method": "python_pandas"
+            }
+        except RiskCalculationError as e:
+            raise HTTPException(status_code=400, detail={"error": e.message, "code": e.error_code})
+    
+    try:
+        result = get_risk_metrics_hybrid(db, asset_id, benchmark_id, lookback_weeks, use_timescale=True)
+        return {
+            "asset_id": asset_id,
+            "benchmark_id": benchmark_id,
+            "lookback_weeks": lookback_weeks,
+            **result
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/timescale/status")
+def get_timescale_status(db: Session = Depends(get_db)):
+    """
+    Check if TimescaleDB risk functions are installed and ready.
+    
+    Returns status of each required SQL function.
+    """
+    if not TIMESCALE_AVAILABLE:
+        return {
+            "status": "unavailable",
+            "message": "TimescaleDB risk module not imported",
+            "functions": {}
+        }
+    
+    try:
+        func_status = check_timescale_functions_exist(db)
+        all_available = all(func_status.values())
+        
+        return {
+            "status": "ready" if all_available else "partial",
+            "message": "All TimescaleDB risk functions are installed" if all_available 
+                      else "Some functions missing - run weekly_returns_view.sql migration",
+            "functions": func_status
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e),
+            "functions": {}
+        }
+

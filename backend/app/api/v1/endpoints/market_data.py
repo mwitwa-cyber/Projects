@@ -121,6 +121,106 @@ def get_ohlc_data(
     data = service.get_ohlc_data(ticker.upper(), start_date)
     return data
 
+@router.get("/returns/{ticker}")
+@cache(expire=300)
+def get_security_returns(
+    ticker: str,
+    periods: int = Query(default=52, ge=4, le=260, description="Number of weekly periods (4-260)"),
+    db: Session = Depends(get_db)
+):
+    """
+    Get historical weekly returns for a security.
+    
+    Returns log returns calculated from weekly closing prices.
+    Default: 52 weeks (1 year).
+    
+    This is used by the Portfolio Optimizer to auto-populate asset returns.
+    """
+    from datetime import datetime, timedelta
+    from sqlalchemy import text
+    import numpy as np
+    import re
+    from fastapi import HTTPException
+    
+    # Validate ticker format
+    if not re.match(r'^[A-Za-z0-9-]{1,15}$', ticker):
+        raise HTTPException(status_code=400, detail="Invalid ticker format")
+    
+    ticker = ticker.upper()
+    
+    # Get weekly closing prices using our bitemporal model
+    # We need at least periods+1 data points to calculate 'periods' returns
+    days_needed = (periods + 5) * 7  # Add buffer
+    start_date = datetime.now() - timedelta(days=days_needed)
+    
+    # Query prices grouped by week
+    result = db.execute(text("""
+        WITH weekly_prices AS (
+            SELECT 
+                DATE_TRUNC('week', valid_from) as week_start,
+                MAX(price) as close_price
+            FROM market_prices 
+            WHERE security_ticker = :ticker 
+              AND valid_from >= :start_date
+              AND transaction_to IS NULL
+            GROUP BY DATE_TRUNC('week', valid_from)
+            ORDER BY week_start
+        )
+        SELECT week_start, close_price FROM weekly_prices
+        ORDER BY week_start
+    """), {"ticker": ticker, "start_date": start_date})
+    
+    rows = result.fetchall()
+    
+    if len(rows) < 2:
+        return {
+            "ticker": ticker,
+            "returns": [],
+            "periods": 0,
+            "message": "Insufficient price history for returns calculation"
+        }
+    
+    # Calculate log returns
+    prices = [row[1] for row in rows]
+    returns = []
+    for i in range(1, len(prices)):
+        if prices[i-1] > 0 and prices[i] > 0:
+            log_return = np.log(prices[i] / prices[i-1])
+            returns.append(round(float(log_return), 6))
+    
+    # Limit to requested periods
+    returns = returns[-periods:] if len(returns) > periods else returns
+    
+    return {
+        "ticker": ticker,
+        "returns": returns,
+        "periods": len(returns),
+        "mean_return": round(float(np.mean(returns)), 6) if returns else 0,
+        "volatility": round(float(np.std(returns)), 6) if returns else 0,
+        "start_date": rows[0][0].isoformat() if rows else None,
+        "end_date": rows[-1][0].isoformat() if rows else None
+    }
+
+
+@router.post("/bulk-returns")
+@cache(expire=300)
+def get_bulk_returns(
+    tickers: List[str],
+    periods: int = Query(default=52, ge=4, le=260),
+    db: Session = Depends(get_db)
+):
+    """
+    Get historical weekly returns for multiple securities at once.
+    Used by Portfolio Optimizer for efficient data loading.
+    """
+    results = {}
+    for ticker in tickers[:20]:  # Limit to 20 assets
+        result = get_security_returns(ticker, periods, db)
+        if result["returns"]:
+            results[ticker.upper()] = result
+    return results
+
+
 @router.get("/luse/latest")
 def get_luse_latest():
     return {"status": "deprecated", "message": "Use /market-summary"}

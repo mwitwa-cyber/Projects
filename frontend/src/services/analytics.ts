@@ -64,6 +64,24 @@ export const analyticsService = {
     },
 
     /**
+     * Get risk metrics using optimized TimescaleDB engine.
+     * Supports flexible lookback by weeks.
+     */
+    getTimescaleRiskMetrics: async (
+        assetId: number,
+        benchmarkId: number,
+        lookbackWeeks: number = 52
+    ): Promise<RiskMetrics> => {
+        const response = await axios.get(`${API_URL}/analytics/timescale/risk/${assetId}`, {
+            params: {
+                benchmark_id: benchmarkId,
+                lookback_weeks: lookbackWeeks
+            }
+        });
+        return response.data;
+    },
+
+    /**
      * Get the latest stored risk metrics from database.
      * Faster than on-demand calculation.
      */

@@ -116,5 +116,6 @@ class CapmService:
             "risk_free_rate": risk_free_rate,
             "liquidity_premium": round(liquidity_premium, 4),
             "average_dollar_volume": round(avg_dollar_vol, 2),
-            "r_squared": round(r_value**2, 4)
+            "r_squared": round(r_value**2, 4),
+            "alpha": round(intercept * 252, 4) # Annualized Jensen's Alpha
         }

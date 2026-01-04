@@ -49,7 +49,7 @@ class YieldCurveService:
         
         for bond in bonds:
             # Get latest price
-            price_record = self.market_data.get_price_as_of(bond.ticker, observation_date)
+            price_record = self.market_data.get_latest_price_before(bond.ticker, observation_date)
             if not price_record:
                 continue
                 
