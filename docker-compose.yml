@@ -1,4 +1,3 @@
-
 services:
   celery_worker:
     build: ./backend
@@ -72,21 +71,20 @@ services:
     environment:
       # Database
       - DATABASE_URL=postgresql://postgres:password@db:5432/luse_quant
-      
+
       # Scraper Configuration
       - ENABLE_SCRAPER=true
-      - SCRAPER_PROVIDER=luse          # Options: simulator, yfinance, alphavantage, finnhub, iexcloud, luse
-      - SCRAPER_INTERVAL=60                 # Seconds between scraper runs
-      
+      - SCRAPER_PROVIDER=luse # Options: simulator, yfinance, alphavantage, finnhub, iexcloud, luse
+      - SCRAPER_INTERVAL=60 # Seconds between scraper runs
       # Provider API Keys (set in .env file or export)
       # - ALPHAVANTAGE_API_KEY=${ALPHAVANTAGE_API_KEY}
       # - FINNHUB_API_KEY=${FINNHUB_API_KEY}
       # - IEXCLOUD_API_KEY=${IEXCLOUD_API_KEY}
-      
+
       # Optional: Symbol mapping for provider format
       # - SYMBOL_MAP_CECZ=CECZ.ZA
       # - SYMBOL_MAP_ZANACO=ZANACO.ZA
-      
+
     depends_on:
       - db
       - redis

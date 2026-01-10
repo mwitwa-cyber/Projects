@@ -75,8 +75,8 @@ export function Dashboard() {
                             <button
                                 onClick={() => setActiveTab('settings')}
                                 className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all border ${activeTab === 'settings'
-                                        ? 'bg-fintech-primary/10 border-fintech-primary text-fintech-primary'
-                                        : 'bg-fintech-card border-fintech-border text-fintech-text-muted hover:text-fintech-text-primary hover:border-fintech-primary/50'
+                                    ? 'bg-fintech-primary/10 border-fintech-primary text-fintech-primary'
+                                    : 'bg-fintech-card border-fintech-border text-fintech-text-muted hover:text-fintech-text-primary hover:border-fintech-primary/50'
                                     }`}
                             >
                                 <Settings className="w-4 h-4" />
